@@ -1,0 +1,51 @@
+# custom-files.txt — Files that are custom to this platform.
+# These will NEVER be overwritten by the upstream sync script.
+# Uses glob patterns. Lines starting with # are comments.
+
+# ---------------------------------------------------------------
+# Auth module (new feature, does not exist upstream)
+# ---------------------------------------------------------------
+src/modules/auth/*
+
+# ---------------------------------------------------------------
+# Symbol editor (new feature, Konva-based)
+# ---------------------------------------------------------------
+src/modules/symboleditor/*
+
+# ---------------------------------------------------------------
+# API client (replaces IndexedDB with REST backend)
+# ---------------------------------------------------------------
+src/lib/api-client.ts
+src/lib/auth-client.ts
+
+# ---------------------------------------------------------------
+# Persistence layer (IndexedDB internals replaced with fetch)
+# ---------------------------------------------------------------
+src/scenariostore/localdb.ts
+
+# ---------------------------------------------------------------
+# Router (modified for auth routes + guards)
+# ---------------------------------------------------------------
+src/router/index.ts
+src/router/names.ts
+
+# ---------------------------------------------------------------
+# Auth store
+# ---------------------------------------------------------------
+src/stores/authStore.ts
+
+# ---------------------------------------------------------------
+# Auth views
+# ---------------------------------------------------------------
+src/views/LoginView.vue
+src/views/RegisterView.vue
+
+# ---------------------------------------------------------------
+# Vite config (modified for API proxy)
+# ---------------------------------------------------------------
+vite.config.ts
+
+# ---------------------------------------------------------------
+# Project docs (our version, not upstream)
+# ---------------------------------------------------------------
+CLAUDE.md
