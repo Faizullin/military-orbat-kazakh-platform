@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { serve } from "@hono/node-server";
 import { env } from "./lib/env";
-import { authRoutes } from "./routes/auth";
+import { auth } from "./lib/auth";
 import { scenarios } from "./routes/scenarios";
 import { symbols } from "./routes/symbols";
 import { upload } from "./routes/upload";
@@ -19,7 +19,7 @@ const app = new Hono()
     }),
   )
   .get("/api/health", (c) => c.json({ status: "ok" }))
-  .route("/api/auth", authRoutes)
+  .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
   .route("/api/scenarios", scenarios)
   .route("/api/symbols", symbols)
   .route("/api/symbols", upload)

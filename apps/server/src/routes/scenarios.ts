@@ -4,11 +4,26 @@ import { zValidator } from "@hono/zod-validator";
 import { prisma } from "@repo/db";
 import { authMiddleware, type AuthEnv } from "../middleware/auth";
 
+function parseEpoch(val: string | number | null | undefined): bigint | null {
+  if (val == null || val === "") return null;
+  if (typeof val === "number") return BigInt(val);
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) return BigInt(d.getTime());
+  try { return BigInt(val); } catch { return null; }
+}
+
+function serializeScenario<T extends { startTime?: bigint | null }>(scenario: T): Omit<T, "startTime"> & { startTime?: number | null } {
+  return {
+    ...scenario,
+    startTime: scenario.startTime != null ? Number(scenario.startTime) : null,
+  };
+}
+
 const saveSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   data: z.record(z.any()),
-  startTime: z.number().nullable().optional(),
+  startTime: z.union([z.string(), z.number()]).nullable().optional(),
   timeZone: z.string().optional(),
 });
 
@@ -57,7 +72,7 @@ const scenarios = new Hono<AuthEnv>()
       where: { id: c.req.param("id"), userId },
     });
     if (!scenario) return c.json({ error: "Not found" }, 404);
-    return c.json(scenario);
+    return c.json(serializeScenario(scenario));
   })
 
   .post("/", zValidator("json", saveSchema), async (c) => {
@@ -68,12 +83,12 @@ const scenarios = new Hono<AuthEnv>()
         name,
         description,
         data,
-        startTime: startTime != null ? BigInt(startTime) : null,
+        startTime: parseEpoch(startTime),
         timeZone: timeZone || null,
         userId,
       },
     });
-    return c.json(scenario, 201);
+    return c.json(serializeScenario(scenario), 201);
   })
 
   .put("/:id", zValidator("json", saveSchema), async (c) => {
@@ -86,11 +101,11 @@ const scenarios = new Hono<AuthEnv>()
         name,
         description,
         data,
-        startTime: startTime != null ? BigInt(startTime) : null,
+        startTime: parseEpoch(startTime),
         timeZone: timeZone || null,
       },
     });
-    return c.json(scenario);
+    return c.json(serializeScenario(scenario));
   })
 
   .delete("/:id", async (c) => {
@@ -127,7 +142,7 @@ const scenarios = new Hono<AuthEnv>()
         userId,
       },
     });
-    return c.json(copy, 201);
+    return c.json(serializeScenario(copy), 201);
   });
 
 export { scenarios };

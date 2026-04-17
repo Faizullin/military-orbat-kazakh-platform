@@ -8,7 +8,7 @@ import {
   type CreateSymbolInput,
   type UpdateSymbolInput,
   type RenderType,
-} from "@/features/api";
+} from "@/features/api/symbols";
 import { LANDING_PAGE_ROUTE } from "@/router/names";
 
 // UI components
@@ -54,6 +54,7 @@ import {
   UploadIcon,
   Loader2Icon,
   RefreshCwIcon,
+  FileCodeIcon,
 } from "lucide-vue-next";
 
 const router = useRouter();
@@ -188,18 +189,24 @@ const uploadAction = ref<"thumbnail" | "attachment">("thumbnail");
 const uploadDialogOpen = ref(false);
 const uploadLoading = ref(false);
 const uploadError = ref<string | null>(null);
-const fileInput = ref<HTMLInputElement | null>(null);
+const selectedFile = ref<File | null>(null);
+
+function handleFileChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  selectedFile.value = target.files?.[0] || null;
+}
 
 function openUpload(id: string, action: "thumbnail" | "attachment") {
   uploadingId.value = id;
   uploadAction.value = action;
   uploadError.value = null;
   uploadLoading.value = false;
+  selectedFile.value = null;
   uploadDialogOpen.value = true;
 }
 
 async function handleUpload() {
-  const file = fileInput.value?.files?.[0];
+  const file = selectedFile.value;
   if (!file || !uploadingId.value) return;
 
   uploadLoading.value = true;
@@ -412,6 +419,16 @@ function thumbUrl(s: ServerSymbolListItem) {
                 <UploadIcon class="size-3.5" />
               </Button>
               <Button
+                v-if="s.renderType === 'FILE'"
+                variant="ghost"
+                size="icon"
+                class="size-7"
+                title="Upload main symbol file (SVG/Image)"
+                @click="openUpload(s.id, 'attachment')"
+              >
+                <FileCodeIcon class="size-3.5" />
+              </Button>
+              <Button
                 variant="ghost"
                 size="icon"
                 class="size-7"
@@ -481,7 +498,7 @@ function thumbUrl(s: ServerSymbolListItem) {
             <Input
               id="sym-category"
               v-model="form.category"
-              placeholder="e.g. NATO, custom"
+              placeholder="e.g. ground, air, space, sea"
             />
           </div>
 
@@ -546,9 +563,9 @@ function thumbUrl(s: ServerSymbolListItem) {
             <AlertDescription>{{ uploadError }}</AlertDescription>
           </Alert>
           <Input
-            ref="fileInput"
             type="file"
             accept="image/*,.svg"
+            @change="handleFileChange"
           />
         </div>
 

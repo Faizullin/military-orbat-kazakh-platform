@@ -38,4 +38,6 @@ const authFetch: typeof fetch = async (input, init) => {
  *   const res = await api.api.scenarios.$get();
  *   const data = await res.json(); // ← typed
  */
-export const api = hc<AppType>("/", { fetch: authFetch });
+export const api = hc<AppType>(import.meta.env.VITE_API_BASE_URL, {
+  fetch: authFetch,
+});

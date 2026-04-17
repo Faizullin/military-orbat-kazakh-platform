@@ -41,8 +41,8 @@ const symbols = new Hono<AuthEnv>()
         category: true,
         createdAt: true,
         updatedAt: true,
-        thumbnail: { select: { url: true } },
-        attachment: { select: { url: true } },
+        thumbnail: { select: { id: true, url: true } },
+        attachment: { select: { id: true, url: true } },
       },
       orderBy: { updatedAt: "desc" },
     });
@@ -66,8 +66,8 @@ const symbols = new Hono<AuthEnv>()
     const symbol = await prisma.topographicSymbol.findFirst({
       where: { id: c.req.param("id"), userId },
       include: {
-        thumbnail: { select: { url: true } },
-        attachment: { select: { url: true } },
+        thumbnail: { select: { id: true, url: true } },
+        attachment: { select: { id: true, url: true } },
       },
     });
     if (!symbol) return c.json({ error: "Not found" }, 404);
@@ -80,8 +80,8 @@ const symbols = new Hono<AuthEnv>()
     const symbol = await prisma.topographicSymbol.create({
       data: { name, description, code, renderType, category: category ?? null, userId },
       include: {
-        thumbnail: { select: { url: true } },
-        attachment: { select: { url: true } },
+        thumbnail: { select: { id: true, url: true } },
+        attachment: { select: { id: true, url: true } },
       },
     });
     return c.json(symbol, 201);
@@ -95,8 +95,8 @@ const symbols = new Hono<AuthEnv>()
       where: { id, userId },
       data,
       include: {
-        thumbnail: { select: { url: true } },
-        attachment: { select: { url: true } },
+        thumbnail: { select: { id: true, url: true } },
+        attachment: { select: { id: true, url: true } },
       },
     });
     return c.json(symbol);
@@ -145,8 +145,8 @@ const symbols = new Hono<AuthEnv>()
         userId,
       },
       include: {
-        thumbnail: { select: { url: true } },
-        attachment: { select: { url: true } },
+        thumbnail: { select: { id: true, url: true } },
+        attachment: { select: { id: true, url: true } },
       },
     });
     return c.json(copy, 201);

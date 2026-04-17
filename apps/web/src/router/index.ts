@@ -161,7 +161,8 @@ router.beforeEach(async (to) => {
   if (to.meta.public) return;
 
   try {
-    const res = await fetch("/api/auth/get-session", { credentials: "include" });
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
+    const res = await fetch(`${baseUrl}/api/auth/get-session`, { credentials: "include" });
     if (res.ok) {
       const data = await res.json();
       if (data?.session) return;

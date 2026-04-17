@@ -97,7 +97,8 @@ export function useSymbolsApi() {
     const form = new FormData();
     form.append("file", file);
     form.append("action", action);
-    const res = await fetch(`/api/symbols/${encodeURIComponent(id)}/upload`, {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
+    const res = await fetch(`${baseUrl}/api/symbols/${encodeURIComponent(id)}/upload`, {
       method: "POST",
       credentials: "include",
       body: form,

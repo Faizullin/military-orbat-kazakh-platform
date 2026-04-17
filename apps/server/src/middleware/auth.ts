@@ -1,5 +1,5 @@
 import type { Context, Next } from "hono";
-import { auth, type Session } from "@repo/auth";
+import { auth, type Session } from "../lib/auth";
 
 export type AuthEnv = {
   Variables: {

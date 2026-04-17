@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { useSymbolsApi, type ServerSymbolListItem } from "@/features/api";
+import { useSymbolsApi, type ServerSymbolListItem } from "@/features/api/symbols";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
