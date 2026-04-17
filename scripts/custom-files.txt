@@ -3,23 +3,13 @@
 # Uses glob patterns. Lines starting with # are comments.
 
 # ---------------------------------------------------------------
-# Auth module (new feature, does not exist upstream)
+# Features directory (ALL custom logic lives here)
 # ---------------------------------------------------------------
-src/modules/auth/*
+src/features/*
 
 # ---------------------------------------------------------------
-# Symbol editor (new feature, Konva-based)
-# ---------------------------------------------------------------
-src/modules/symboleditor/*
-
-# ---------------------------------------------------------------
-# API client (replaces IndexedDB with REST backend)
-# ---------------------------------------------------------------
-src/lib/api-client.ts
-src/lib/auth-client.ts
-
-# ---------------------------------------------------------------
-# Persistence layer (IndexedDB internals replaced with fetch)
+# Bridge files (thin re-exports at upstream paths)
+# Required because upstream code imports from these paths
 # ---------------------------------------------------------------
 src/scenariostore/localdb.ts
 
@@ -30,22 +20,7 @@ src/router/index.ts
 src/router/names.ts
 
 # ---------------------------------------------------------------
-# Auth store
-# ---------------------------------------------------------------
-src/stores/authStore.ts
-
-# ---------------------------------------------------------------
-# Auth views
-# ---------------------------------------------------------------
-src/views/LoginView.vue
-src/views/RegisterView.vue
-
-# ---------------------------------------------------------------
-# Vite config (modified for API proxy)
+# Config
 # ---------------------------------------------------------------
 vite.config.ts
-
-# ---------------------------------------------------------------
-# Project docs (our version, not upstream)
-# ---------------------------------------------------------------
 CLAUDE.md

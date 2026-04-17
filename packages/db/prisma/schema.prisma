@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------
+// better-auth managed tables
+// -----------------------------------------------
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions  Session[]
+  accounts  Account[]
+  scenarios Scenario[] @relation("UserScenarios")
+  symbols   TopographicSymbol[] @relation("UserSymbols")
+  attachments Attachment[] @relation("UserAttachments")
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// -----------------------------------------------
+// Application models
+// -----------------------------------------------
+
+model Scenario {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startTime   BigInt?
+  timeZone    String?
+  data        Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation("UserScenarios", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("scenarios")
+}
+
+model TopographicSymbol {
+  id          String     @id @default(cuid())
+  name        String
+  description String
+  code        String     // Konva JSON (for EDITOR type) or file ref
+  renderType  RenderType
+  category    String?    // Grouping label (e.g. "Bridges", "Obstacles", "Fortifications")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  userId String
+  user   User   @relation("UserSymbols", fields: [userId], references: [id])
+
+  attachmentId String?     @unique
+  attachment   Attachment? @relation("SymbolAttachment", fields: [attachmentId], references: [id])
+
+  thumbnailId String?     @unique
+  thumbnail   Attachment? @relation("SymbolThumbnail", fields: [thumbnailId], references: [id])
+
+  @@index([userId])
+  @@index([category])
+  @@map("topographic_symbols")
+}
+
+enum RenderType {
+  FILE
+  EDITOR
+}
+
+enum AttachmentEntity {
+  TOPOGRAPHIC_SYMBOL
+}
+
+enum AttachmentType {
+  DOCUMENT
+  IMAGE
+  VIDEO
+  AUDIO
+  OTHER
+}
+
+model Attachment {
+  id               String         @id @default(cuid())
+  originalFilename String         @db.VarChar(255)
+  storageKey       String         @unique @db.VarChar(500)
+  storageBackend   String         @default("cloudinary") @db.VarChar(20)
+  contentType      String         @db.VarChar(100)
+  fileSize         BigInt
+  checksum         String         @db.VarChar(32)
+  attachmentType   AttachmentType @default(DOCUMENT)
+  title            String?        @db.VarChar(255)
+  url              String?        @db.VarChar(500)
+  description      String?        @db.Text
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+
+  uploadedById String
+  uploadedBy   User @relation("UserAttachments", fields: [uploadedById], references: [id])
+
+  symbolAttachment TopographicSymbol? @relation("SymbolAttachment")
+  symbolThumbnail  TopographicSymbol? @relation("SymbolThumbnail")
+
+  @@index([uploadedById])
+  @@map("attachments")
+}

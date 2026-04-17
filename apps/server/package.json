@@ -1,0 +1,40 @@
+{
+  "name": "@repo/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "db:generate": "prisma generate --schema ../../packages/db/prisma/schema.prisma",
+    "db:push": "prisma db push --schema ../../packages/db/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema ../../packages/db/prisma/schema.prisma",
+    "db:studio": "prisma studio --schema ../../packages/db/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^3.0.63",
+    "@hono/node-server": "^1.14.0",
+    "@hono/zod-validator": "^0.7.6",
+    "@repo/auth": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@vercel/blob": "^2.3.3",
+    "ai": "^6.0.162",
+    "cloudinary": "^2.9.0",
+    "dotenv": "^17.4.2",
+    "hono": "^4.7.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "prisma": "^6.19.3",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.3"
+  }
+}

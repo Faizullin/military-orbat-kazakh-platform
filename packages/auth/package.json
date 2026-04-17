@@ -1,0 +1,27 @@
+{
+  "name": "@repo/auth",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/server.ts",
+      "default": "./src/server.ts"
+    },
+    "./client": {
+      "types": "./src/client.ts",
+      "default": "./src/client.ts"
+    }
+  },
+  "scripts": {
+    "generate": "npx @better-auth/cli generate --output ./src/auth-client.ts"
+  },
+  "dependencies": {
+    "better-auth": "^1.2.0",
+    "@repo/db": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "@types/node": "^24.12.0"
+  }
+}

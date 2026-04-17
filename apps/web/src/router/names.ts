@@ -10,3 +10,10 @@ export const MAPLIBRE_ROUTE = "MaplibreRoute";
 export const TEXT_TO_ORBAT_ROUTE = "TextToOrbatRoute";
 export const IMPORT_SCENARIO_ROUTE = "ImportScenarioRoute";
 export const SYMBOL_BROWSER_ROUTE = "SymbolBrowserRoute";
+
+// Auth routes (custom)
+export const LOGIN_ROUTE = "LoginRoute";
+export const REGISTER_ROUTE = "RegisterRoute";
+
+// Library routes (custom)
+export const SYMBOL_LIBRARY_ROUTE = "SymbolLibraryRoute";

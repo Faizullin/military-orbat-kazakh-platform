@@ -18,3 +18,6 @@ Thumbs.db
 
 # Build artifacts
 *.tsbuildinfo
+
+# Prisma generated client
+packages/db/src/generated/
