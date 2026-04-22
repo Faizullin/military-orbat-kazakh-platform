@@ -1,6 +1,9 @@
 export const OLD_MAP_ROUTE = "ScenarioRoute";
 export const NEW_SCENARIO_ROUTE = "NewScenarioRoute";
 export const LANDING_PAGE_ROUTE = "LandingPageRoute";
+export const DASHBOARD_ROUTE = "DashboardRoute";
+export const DASHBOARD_SCENARIOS_ROUTE = "DashboardScenariosRoute";
+export const DASHBOARD_SYMBOLS_ROUTE = "DashboardSymbolsRoute";
 export const STORY_MODE_ROUTE = "StoryModeRoute";
 export const ORBAT_CHART_ROUTE = "OrbatChartRoute";
 export const GRID_EDIT_ROUTE = "GridEditRoute";
@@ -15,5 +18,4 @@ export const SYMBOL_BROWSER_ROUTE = "SymbolBrowserRoute";
 export const LOGIN_ROUTE = "LoginRoute";
 export const REGISTER_ROUTE = "RegisterRoute";
 
-// Library routes (custom)
-export const SYMBOL_LIBRARY_ROUTE = "SymbolLibraryRoute";
+export const SYMBOL_EDITOR_ROUTE = "SymbolEditorRoute";

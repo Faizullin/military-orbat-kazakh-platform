@@ -20,6 +20,7 @@ function serializeScenario<T extends { startTime?: bigint | null }>(scenario: T)
 }
 
 const saveSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1),
   description: z.string().optional(),
   data: z.record(z.any()),
@@ -77,9 +78,10 @@ const scenarios = new Hono<AuthEnv>()
 
   .post("/", zValidator("json", saveSchema), async (c) => {
     const userId = c.get("user").id;
-    const { name, description, data, startTime, timeZone } = c.req.valid("json");
+    const { id, name, description, data, startTime, timeZone } = c.req.valid("json");
     const scenario = await prisma.scenario.create({
       data: {
+        id,
         name,
         description,
         data,
@@ -95,7 +97,7 @@ const scenarios = new Hono<AuthEnv>()
     const userId = c.get("user").id;
     const id = c.req.param("id");
     const { name, description, data, startTime, timeZone } = c.req.valid("json");
-    const scenario = await prisma.scenario.update({
+    const update = await prisma.scenario.updateMany({
       where: { id, userId },
       data: {
         name,
@@ -105,6 +107,16 @@ const scenarios = new Hono<AuthEnv>()
         timeZone: timeZone || null,
       },
     });
+
+    if (update.count === 0) {
+      return c.json({ error: "Not found" }, 404);
+    }
+
+    const scenario = await prisma.scenario.findFirst({
+      where: { id, userId },
+    });
+    if (!scenario) return c.json({ error: "Not found" }, 404);
+
     return c.json(serializeScenario(scenario));
   })
 

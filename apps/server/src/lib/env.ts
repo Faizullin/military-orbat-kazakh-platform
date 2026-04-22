@@ -29,8 +29,9 @@ const envSchema = z.object({
   // Vercel Blob (optional — required only when STORAGE_PROVIDER=vercel)
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
 
-  // AI (optional — required only for symbol generation)
+  // AI (optional — required only for symbol generation, per-provider)
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
 });
 

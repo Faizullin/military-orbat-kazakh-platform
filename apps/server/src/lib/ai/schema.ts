@@ -33,7 +33,16 @@ export const AICanvasObjectSchema = z.object({
 
 export type AICanvasObject = z.infer<typeof AICanvasObjectSchema>;
 
-// ── Tool output schema ────────────────────────────────────────────────────────
+export const AIBoardSchema = z.object({
+  width: z.number().min(50).max(4096).describe("Canvas board width in pixels"),
+  height: z.number().min(50).max(4096).describe("Canvas board height in pixels"),
+  backgroundColor: z
+    .string()
+    .optional()
+    .describe("Optional board background color (hex). Omit for transparent."),
+});
+
+// ── AI structured output schema ───────────────────────────────────────────────
 
 export const SymbolOutputSchema = z.object({
   description: z
@@ -41,10 +50,11 @@ export const SymbolOutputSchema = z.object({
     .describe(
       "Brief description of the analyzed symbol and what changes were made in this iteration compared to the previous one.",
     ),
-  code: z
-    .string()
+  board: AIBoardSchema.describe("Board dimensions and optional background color"),
+  objects: z
+    .array(AICanvasObjectSchema)
     .describe(
-      "Vanilla Konva.js JavaScript code to recreate the symbol. Must use 'container', 'stage', and 'Konva' variables. No imports, no markdown.",
+      "Ordered list of canvas objects that recreate the reference symbol. Order matters — later objects render on top.",
     ),
   shouldContinue: z
     .boolean()
@@ -53,8 +63,10 @@ export const SymbolOutputSchema = z.object({
     ),
   changesSummary: z
     .string()
-    .describe("What was changed/improved compared to the previous iteration. For the first iteration, describe what was created.")
-    .optional(),
+    .optional()
+    .describe(
+      "What was changed/improved compared to the previous iteration. For the first iteration, describe what was created.",
+    ),
 });
 
 export type SymbolOutput = z.infer<typeof SymbolOutputSchema>;

@@ -26,7 +26,7 @@ import type {
   UnitSymbolOptions,
 } from "@/types/scenarioModels";
 import { mapReinforcedStatus2Field } from "@/types/scenarioModels";
-import { getNextEchelonBelow, setSid } from "@/symbology/helpers";
+import { getFullUnitSidc, getNextEchelonBelow, setSid } from "@/symbology/helpers";
 import { clearUnitStyleCache, invalidateUnitStyle } from "@/geo/unitStyles";
 import { useSupplyManipulations } from "@/scenariostore/supplyManipulations";
 import { useToeManipulations } from "@/scenariostore/toeManipulations";
@@ -850,12 +850,15 @@ export function useUnitManipulations(store: NewScenarioStore) {
   function createSubordinateUnit(parentId: EntityId, data: Partial<NUnit> = {}) {
     const parent = getUnitOrSideGroupOrSide(parentId);
     if (!parent) return;
-    let sidc: Sidc;
+    let sidc: Sidc | string;
     if (data.sidc) {
-      sidc = new Sidc(data.sidc);
+      sidc = data.sidc.startsWith(CUSTOM_SYMBOL_PREFIX)
+        ? data.sidc
+        : new Sidc(data.sidc);
     } else if ("sidc" in parent) {
-      const parentSidc = new Sidc(parent.sidc);
-      sidc = new Sidc(data.sidc || parent.sidc);
+      const parentSidcValue = getFullUnitSidc(parent.sidc);
+      const parentSidc = new Sidc(parentSidcValue);
+      sidc = new Sidc(parentSidcValue);
       sidc.emt = getNextEchelonBelow(parentSidc.emt);
     } else {
       sidc = new Sidc("10031000000000000000");
@@ -864,7 +867,7 @@ export function useUnitManipulations(store: NewScenarioStore) {
     }
     const newUnit: NUnit = {
       name: data.name || parent.name + counter++,
-      sidc: sidc.toString(),
+      sidc: typeof sidc === "string" ? sidc : sidc.toString(),
       id: nanoid(),
       state: [],
       _state: null,

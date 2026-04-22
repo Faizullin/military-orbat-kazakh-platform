@@ -20,6 +20,11 @@ src/router/index.ts
 src/router/names.ts
 
 # ---------------------------------------------------------------
+# Upstream files patched to wire custom features
+# ---------------------------------------------------------------
+src/modules/scenarioeditor/SymbolPickerPopover.vue
+
+# ---------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------
 vite.config.ts

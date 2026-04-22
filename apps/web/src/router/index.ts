@@ -6,6 +6,9 @@ import "nprogress/nprogress.css";
 import LandingPage from "@/views/LandingPage.vue";
 import {
   CHART_EDIT_MODE_ROUTE,
+  DASHBOARD_ROUTE,
+  DASHBOARD_SCENARIOS_ROUTE,
+  DASHBOARD_SYMBOLS_ROUTE,
   MAPLIBRE_ROUTE,
   GRID_EDIT_ROUTE,
   IMPORT_SCENARIO_ROUTE,
@@ -16,7 +19,7 @@ import {
   REGISTER_ROUTE,
   STORY_MODE_ROUTE,
   SYMBOL_BROWSER_ROUTE,
-  SYMBOL_LIBRARY_ROUTE,
+  SYMBOL_EDITOR_ROUTE,
   TEXT_TO_ORBAT_ROUTE,
 } from "@/router/names";
 
@@ -35,6 +38,11 @@ const StoryModeView = () => import("@/modules/storymode/StoryModeWrapper.vue");
 const TextToOrbatView = () => import("@/views/texttoorbat/TextToOrbatView.vue");
 const ImportScenarioView = () => import("@/views/ImportScenarioView.vue");
 const SymbolBrowserView = () => import("@/views/SymbolBrowserView.vue");
+const DashboardView = () => import("@/views/DashboardView.vue");
+const DashboardScenariosPage = () =>
+  import("@/features/dashboard/DashboardScenariosPage.vue");
+const DashboardSymbolsPage = () =>
+  import("@/features/dashboard/DashboardSymbolsPage.vue");
 const GridEditView = () => import("@/modules/scenarioeditor/GridEditView.vue");
 const ChartEditView = () => import("@/modules/scenarioeditor/ChartEditView.vue");
 const ScenarioEditorMap = () => import("@/modules/scenarioeditor/ScenarioEditorMap.vue");
@@ -45,8 +53,7 @@ const ScenarioEditorMaplibre = () =>
 const LoginView = () => import("@/features/auth/LoginView.vue");
 const RegisterView = () => import("@/features/auth/RegisterView.vue");
 
-// Custom feature views (lazy)
-const LibraryView = () => import("@/features/symbols/LibraryView.vue");
+const SymbolEditView = () => import("@/features/symbols/editor/SymbolEditView.vue");
 
 const routes = [
   // Auth (public)
@@ -65,9 +72,10 @@ const routes = [
 
   // Custom feature routes
   {
-    path: "/library",
-    name: SYMBOL_LIBRARY_ROUTE,
-    component: LibraryView,
+    path: "/dashboard/symbols/:id/edit",
+    name: SYMBOL_EDITOR_ROUTE,
+    component: SymbolEditView,
+    props: true,
   },
 
   // Upstream routes
@@ -120,6 +128,32 @@ const routes = [
       NProgress.start();
     },
   },
+  {
+    path: "/dashboard",
+    name: DASHBOARD_ROUTE,
+    component: DashboardView,
+    children: [
+      {
+        path: "",
+        redirect: { name: DASHBOARD_SCENARIOS_ROUTE },
+      },
+      {
+        path: "scenarios",
+        name: DASHBOARD_SCENARIOS_ROUTE,
+        component: DashboardScenariosPage,
+      },
+      {
+        path: "symbols",
+        name: DASHBOARD_SYMBOLS_ROUTE,
+        component: DashboardSymbolsPage,
+      },
+    ],
+  },
+  {
+    path: "/dahsabord",
+    redirect: { name: DASHBOARD_SCENARIOS_ROUTE },
+  },
+
   {
     path: "/text-to-orbat",
     name: TEXT_TO_ORBAT_ROUTE,

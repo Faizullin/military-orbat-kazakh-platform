@@ -17,6 +17,8 @@ import { Sidc } from "@/symbology/sidc";
 import { injectStrict } from "@/utils";
 import { activeScenarioKey } from "@/components/injects";
 import { useActiveUnitStore } from "@/stores/dragStore";
+import { CUSTOM_SYMBOL_PREFIX } from "@/config/constants.ts";
+import { getCustomSymbolId, getFullUnitSidc } from "@/symbology/helpers";
 
 export type SymbolPage = "land" | "sea" | "air" | "space" | "equipment";
 
@@ -62,7 +64,9 @@ const activeSidc = ref("10031000141211000000");
 export function useToolbarUnitSymbolData() {
   const emtStore: Record<string, string> = { [UNIT_SYMBOLSET_VALUE]: "16" };
 
-  const symbolSetValue = computed(() => new Sidc(activeSidc.value).symbolSet);
+  const symbolSetValue = computed(
+    () => new Sidc(getFullUnitSidc(activeSidc.value)).symbolSet,
+  );
 
   function mapSymbolCode({ code, text, symbolSet }: ExtendedSymbolValue): SymbolItem {
     return {
@@ -154,10 +158,19 @@ export function useActiveSidc() {
   const { unitActions } = injectStrict(activeScenarioKey);
   const { activeParent } = useActiveUnitStore();
   const sidc = computed(() => {
-    const sidcObj = new Sidc(activeSidc.value);
+    const sidcObj = new Sidc(getFullUnitSidc(activeSidc.value));
     sidcObj.emt = currentEchelon.value;
     sidcObj.standardIdentity = currentSid.value;
-    return sidcObj.toString();
+    const parsedSidc = sidcObj.toString();
+
+    if (!activeSidc.value.startsWith(CUSTOM_SYMBOL_PREFIX)) {
+      return parsedSidc;
+    }
+
+    const customSymbolId = getCustomSymbolId(activeSidc.value);
+    return customSymbolId
+      ? `${CUSTOM_SYMBOL_PREFIX}${parsedSidc}:${customSymbolId}`
+      : parsedSidc;
   });
   const symbolOptions = computed(() =>
     activeParent.value

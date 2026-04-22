@@ -39,6 +39,8 @@ import EchelonPickerPopover from "@/modules/scenarioeditor/EchelonPickerPopover.
 import { Button } from "@/components/ui/button";
 import { CUSTOM_SYMBOL_PREFIX } from "@/config/constants.ts";
 import { useRecordingStore } from "@/stores/recordingStore";
+import MapTopographicSymbolPicker from "@/features/symbols/map/MapTopographicSymbolPicker.vue";
+import { getCustomSymbolId, getFullUnitSidc } from "@/symbology/helpers";
 
 const props = withDefaults(
   defineProps<{
@@ -110,6 +112,13 @@ const symbolOptions = computed(() =>
     : {},
 );
 
+const canPlaceUnit = computed(
+  () =>
+    props.canAddUnits &&
+    !!activeParentId.value &&
+    !unitActions.isUnitLocked(activeParentId.value),
+);
+
 const {
   start: startGetLocation,
   isActive: isGetLocationActive,
@@ -130,6 +139,21 @@ function addUnit(sidc: string, closePopover?: (ref?: Ref | HTMLElement) => void)
   startGetLocation();
 }
 
+function getPlacementSidc(sidcValue: string, standardIdentity: string) {
+  const parsedSidc = new Sidc(getFullUnitSidc(sidcValue));
+  parsedSidc.emt = currentEchelon.value;
+  parsedSidc.standardIdentity = standardIdentity;
+
+  if (!sidcValue.startsWith(CUSTOM_SYMBOL_PREFIX)) {
+    return parsedSidc.toString();
+  }
+
+  const customSymbolId = getCustomSymbolId(sidcValue);
+  return customSymbolId
+    ? `${CUSTOM_SYMBOL_PREFIX}${parsedSidc.toString()}:${customSymbolId}`
+    : parsedSidc.toString();
+}
+
 onMounted(() => {
   if (!activeParentId.value) resetActiveParent();
 });
@@ -148,11 +172,8 @@ onGetLocation((location) => {
   groupUpdate(() => {
     if (!activeParentId.value || unitActions.isUnitLocked(activeParentId.value)) return;
     const name = `${(activeParent.value?.subUnits?.length ?? 0) + 1}`;
-    const sidc = new Sidc(activeSidc.value!);
-    sidc.emt = currentEchelon.value;
-    sidc.standardIdentity = currentSid.value;
     const unitId = unitActions.createSubordinateUnit(activeParentId.value, {
-      sidc: sidc.toString(),
+      sidc: getPlacementSidc(activeSidc.value!, currentSid.value),
       name,
     });
     unitId && addUnitPosition(unitId, location);
@@ -168,11 +189,8 @@ bus.on((unit) => {
       cancelGetLocation();
     }
     const name = `${(activeParent.value?.subUnits?.length ?? 0) + 1}`;
-    const sidc = new Sidc(activeSidc.value!);
-    sidc.emt = currentEchelon.value;
-    sidc.standardIdentity = unit.sidc[SID_INDEX];
     const unitId = unitActions.createSubordinateUnit(unit.id, {
-      sidc: sidc.toString(),
+      sidc: getPlacementSidc(activeSidc.value!, unit.sidc[SID_INDEX]),
       name,
     });
   }
@@ -341,11 +359,7 @@ watchEffect(() => {
           :title="
             props.canAddUnits ? 'Add unit' : 'Add unit not supported in MapLibre mode yet'
           "
-          :disabled="
-            !props.canAddUnits ||
-            !activeParentId ||
-            unitActions.isUnitLocked(activeParentId)
-          "
+          :disabled="!canPlaceUnit"
         >
           <AddSymbolIcon
             class="bg-opacity-70 text-muted-foreground group-hover:text-foreground bg-background absolute -right-2 bottom-0 h-4 w-4 rounded-full"
@@ -355,6 +369,11 @@ watchEffect(() => {
           v-if="props.canAddUnits"
           :symbol-options="symbolOptions"
           :add-unit="addUnit"
+        />
+        <MapTopographicSymbolPicker
+          v-if="props.canAddUnits"
+          :add-unit="addUnit"
+          :disabled="!canPlaceUnit"
         />
       </div>
     </section>

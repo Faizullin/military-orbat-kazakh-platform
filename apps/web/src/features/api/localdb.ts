@@ -37,6 +37,7 @@ export async function useIndexedDb() {
     }
     const res = await api.api.scenarios.$post({
       json: {
+        id: scenarioId,
         name: scenario.name,
         description: scenario.description ?? "",
         data: scenario as unknown as Record<string, unknown>,
@@ -62,7 +63,7 @@ export async function useIndexedDb() {
     });
     const row = await res.json();
     if ("error" in row) throw new Error(String(row.error));
-    return scenario.id;
+    return row.id;
   }
 
   async function loadScenario(id: string): Promise<Scenario | undefined> {
@@ -71,6 +72,7 @@ export async function useIndexedDb() {
       const row = await res.json();
       if ("error" in row) return undefined;
       const scenario = row.data as unknown as Scenario;
+      scenario.id = row.id;
       if (!scenario.meta) {
         scenario.meta = {
           createdDate: new Date(row.createdAt).toISOString(),

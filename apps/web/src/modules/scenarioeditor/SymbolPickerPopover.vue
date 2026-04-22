@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { IconChevronUp, IconPlus as AddSymbolIcon } from "@iconify-prerendered/vue-mdi";
+import { ref } from "vue";
 import PanelSymbolButton from "@/components/PanelSymbolButton.vue";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ref } from "vue";
 import { useToolbarUnitSymbolData } from "@/composables/mainToolbarData";
 import { useMainToolbarStore } from "@/stores/mainToolbarStore";
 import { type UnitSymbolOptions } from "@/types/scenarioModels";
@@ -22,16 +22,16 @@ interface Props {
 const props = defineProps<Props>();
 
 const { getModalSidc } = injectStrict(sidcModalKey);
-
 const { iconItems, customIcon, customSidc, symbolPage } = useToolbarUnitSymbolData();
 const store = useMainToolbarStore();
 
 const isOpen = ref(false);
-const symbolTabs = ref([
+
+const symbolTabs = [
   { title: "Land", sidc: "30031000001211000000", id: "land" },
   { title: "Sea", sidc: "10033000001201000000", id: "sea" },
   { title: "Air", sidc: "30030100001101000000", id: "air" },
-]);
+];
 
 const panelItems: MenuItemData[] = [
   { label: "Add symbol to panel", action: () => handleChangeSymbol() },
@@ -90,13 +90,12 @@ function onAddUnit(sidc: string) {
               }"
             />
           </TabsTrigger>
-          <DotsMenu :items="panelItems" class="" />
+          <DotsMenu :items="panelItems" />
         </TabsList>
       </Tabs>
 
       <div class="mt-3 grid h-20 grid-cols-5 place-items-center items-center gap-2">
         <PanelSymbolButton
-          class=""
           v-for="{ sidc, text } in iconItems"
           :key="sidc"
           :sidc="sidc"
@@ -105,7 +104,6 @@ function onAddUnit(sidc: string) {
           @click="onAddUnit(sidc)"
         />
         <PanelSymbolButton
-          class=""
           :sidc="customSidc"
           :title="customIcon.text"
           :symbol-options="symbolOptions"
@@ -115,8 +113,8 @@ function onAddUnit(sidc: string) {
           variant="ghost"
           size="icon"
           type="button"
-          @click="handleChangeSymbol()"
           title="Add symbol"
+          @click="handleChangeSymbol()"
         >
           <AddSymbolIcon class="size-5" />
         </Button>

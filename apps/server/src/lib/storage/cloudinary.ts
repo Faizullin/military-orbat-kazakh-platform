@@ -15,9 +15,16 @@ export const CloudinaryService: IStorageProvider = {
 
     return new Promise((resolve, reject) => {
       const folderPath = `${env.UPLOAD_FOLDER_PREFIX}/${access.toLowerCase()}/${type}`;
+      const isSvg = file.mimetype === "image/svg+xml";
 
       const stream = cloudinary.uploader.upload_stream(
-        { folder: folderPath, resource_type: "auto", transformation: [{ quality: "auto", fetch_format: "auto" }] },
+        {
+          folder: folderPath,
+          resource_type: "auto",
+          ...(isSvg
+            ? {}
+            : { transformation: [{ quality: "auto", fetch_format: "auto" }] }),
+        },
         (error, result) => {
           if (error || !result) return reject(new Error(error?.message || "Cloudinary upload failed"));
           resolve({

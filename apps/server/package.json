@@ -23,6 +23,7 @@
     "seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.71",
     "@ai-sdk/google": "^3.0.63",
     "@hono/node-server": "^1.14.0",
     "@hono/zod-validator": "^0.7.6",

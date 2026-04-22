@@ -27,6 +27,15 @@ export interface UpdateSymbolInput {
   category?: string | null;
 }
 
+export interface ConvertSymbolInput {
+  thumbnail: Blob;
+  attachment: Blob;
+  thumbnailName?: string;
+  attachmentName?: string;
+  thumbnailType?: string;
+  attachmentType?: string;
+}
+
 async function unwrap<T extends { error: string } | object>(
   res: Response,
   data: T,
@@ -37,8 +46,9 @@ async function unwrap<T extends { error: string } | object>(
 
 export function useSymbolsApi() {
   async function listSymbols(category?: string): Promise<ServerSymbolListItem[]> {
+    const normalizedCategory = category && category.trim() ? category : undefined;
     const res = await api.api.symbols.$get({
-      query: category ? { category } : {},
+      query: normalizedCategory ? { category: normalizedCategory } : {},
     });
     return res.json();
   }
@@ -110,6 +120,36 @@ export function useSymbolsApi() {
     return data;
   }
 
+  async function convertSymbol(
+    id: string,
+    {
+      thumbnail,
+      attachment,
+      thumbnailName = "thumbnail.png",
+      attachmentName = "attachment.svg",
+      thumbnailType = "image/png",
+      attachmentType = "image/svg+xml",
+    }: ConvertSymbolInput,
+  ): Promise<ServerSymbol> {
+    const form = new FormData();
+    form.append("thumbnail", new File([thumbnail], thumbnailName, { type: thumbnailType }));
+    form.append(
+      "attachment",
+      new File([attachment], attachmentName, { type: attachmentType }),
+    );
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
+    const res = await fetch(`${baseUrl}/api/symbols/${encodeURIComponent(id)}/convert`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok || "error" in data) {
+      throw new ApiError(res.status, String(data.error ?? "Convert failed"));
+    }
+    return data as ServerSymbol;
+  }
+
   return {
     listSymbols,
     listCategories,
@@ -119,5 +159,6 @@ export function useSymbolsApi() {
     deleteSymbol,
     duplicateSymbol,
     uploadSymbolFile,
+    convertSymbol,
   };
 }
