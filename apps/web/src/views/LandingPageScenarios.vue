@@ -32,7 +32,7 @@ const {
   onAction,
   onBulkAction,
   loadScenario,
-} = useBrowserScenarios();
+} = useBrowserScenarios({ loadOnMount: false });
 
 const router = useRouter();
 const getScenarioTo = (scenarioId: string) => {

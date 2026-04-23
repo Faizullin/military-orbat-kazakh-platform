@@ -105,6 +105,8 @@ model TopographicSymbol {
   code        String     // Konva JSON (for EDITOR type) or file ref
   renderType  RenderType
   category    String?    // Grouping label (e.g. "Bridges", "Obstacles", "Fortifications")
+  fillColor   String?    @db.VarChar(64)
+  inheritColor Boolean   @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 

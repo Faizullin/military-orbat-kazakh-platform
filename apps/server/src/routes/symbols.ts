@@ -15,12 +15,20 @@ const categorySchema = z.preprocess((value) => {
   return value.trim() || null;
 }, z.string().nullable().optional());
 
+const fillColorSchema = z.preprocess((value) => {
+  if (value === null) return null;
+  if (typeof value !== "string") return value;
+  return value.trim() || null;
+}, z.string().max(64).nullable().optional());
+
 const createSchema = z.object({
   name: z.string().min(1),
   description: z.string().default(""),
   code: z.string(),
   renderType: z.enum(["FILE", "EDITOR"]),
   category: categorySchema,
+  fillColor: fillColorSchema,
+  inheritColor: z.boolean().optional().default(true),
 });
 
 const updateSchema = z.object({
@@ -29,6 +37,8 @@ const updateSchema = z.object({
   code: z.string().optional(),
   renderType: z.enum(["FILE", "EDITOR"]).optional(),
   category: categorySchema,
+  fillColor: fillColorSchema,
+  inheritColor: z.boolean().optional(),
 });
 
 const listQuerySchema = z.object({
@@ -102,6 +112,8 @@ const symbols = new Hono<AuthEnv>()
         description: true,
         renderType: true,
         category: true,
+        fillColor: true,
+        inheritColor: true,
         createdAt: true,
         updatedAt: true,
         thumbnail: { select: { id: true, url: true } },
@@ -139,9 +151,19 @@ const symbols = new Hono<AuthEnv>()
 
   .post("/", zValidator("json", createSchema), async (c) => {
     const userId = c.get("user").id;
-    const { name, description, code, renderType, category } = c.req.valid("json");
+    const { name, description, code, renderType, category, fillColor, inheritColor } =
+      c.req.valid("json");
     const symbol = await prisma.topographicSymbol.create({
-      data: { name, description, code, renderType, category: category ?? null, userId },
+      data: {
+        name,
+        description,
+        code,
+        renderType,
+        category: category ?? null,
+        fillColor: fillColor ?? null,
+        inheritColor,
+        userId,
+      },
       include: {
         thumbnail: { select: { id: true, url: true } },
         attachment: { select: { id: true, url: true } },
@@ -258,6 +280,8 @@ const symbols = new Hono<AuthEnv>()
             code: source.code,
             renderType: source.renderType,
             category: source.category,
+            fillColor: source.fillColor,
+            inheritColor: source.inheritColor,
             userId,
             thumbnailId: thumbnail?.id,
             attachmentId: attachment?.id,

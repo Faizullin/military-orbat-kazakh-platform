@@ -99,16 +99,22 @@ export function createUnitStyle(
     const customSymbolId = sidc.slice(CUSTOM_SYMBOL_SLICE);
     const customSymbolSize =
       baseMapSymbolSize * (mapSettingsStore.mapCustomIconScale || 1.7);
-    const cacheKey =
-      customSymbolId + hashObject({ symbolRotationDeg, color, customSymbolSize });
     const customSymbol = scenario.store.state.customSymbolMap[customSymbolId];
+    const customSymbolColor = color
+      ? color
+      : customSymbol?.inheritColor === false
+        ? customSymbol.fillColor || symbolOptions?.fillColor
+        : symbolOptions?.fillColor;
+    const cacheKey =
+      customSymbolId +
+      hashObject({ symbolRotationDeg, customSymbolColor, customSymbolSize });
     return {
       style: customSymbol
         ? createCustomSymbolStyle(
             customSymbol,
             customSymbolSize,
             symbolRotationRad,
-            color,
+            customSymbolColor,
           )
         : new Style(),
       cacheKey,

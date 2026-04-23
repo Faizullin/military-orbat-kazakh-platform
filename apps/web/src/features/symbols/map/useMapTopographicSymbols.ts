@@ -53,7 +53,11 @@ export function useMapTopographicSymbols(scenario: TScenario) {
 
     return (
       Object.values(scenario.store.state.customSymbolMap).find(
-        (symbol) => symbol.name === source.name && symbol.src === src,
+        (symbol) =>
+          symbol.name === source.name &&
+          symbol.src === src &&
+          symbol.fillColor === (source.fillColor ?? undefined) &&
+          (symbol.inheritColor ?? true) === (source.inheritColor ?? true),
       ) ?? null
     );
   }
@@ -71,6 +75,8 @@ export function useMapTopographicSymbols(scenario: TScenario) {
       name: source.name,
       src,
       sidc: DEFAULT_TOPOGRAPHIC_SIDC,
+      fillColor: source.fillColor ?? undefined,
+      inheritColor: source.inheritColor ?? true,
     });
     clearUnitStyleCache();
 

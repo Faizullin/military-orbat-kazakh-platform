@@ -15,8 +15,9 @@ const { storedScenariosMock, openFilePickerMock } = vi.hoisted(() => ({
   storedScenariosMock: [] as Array<{ id: string; name: string }>,
   openFilePickerMock: vi.fn(),
 }));
-const { onBulkActionMock } = vi.hoisted(() => ({
+const { onBulkActionMock, useBrowserScenariosMock } = vi.hoisted(() => ({
   onBulkActionMock: vi.fn(),
+  useBrowserScenariosMock: vi.fn(),
 }));
 
 const StoredScenarioBrowserStub = defineComponent({
@@ -39,13 +40,13 @@ vi.mock("vue-router", () => ({
 
 vi.mock("@/composables/browserScenarios", () => ({
   DEMO_SCENARIOS: [],
-  useBrowserScenarios: () => ({
+  useBrowserScenarios: useBrowserScenariosMock.mockImplementation(() => ({
     storedScenarios: storedScenariosMock,
     sortOptions: [],
     onAction: vi.fn(),
     onBulkAction: onBulkActionMock,
     loadScenario: loadScenarioMock,
-  }),
+  })),
 }));
 
 vi.mock("@/composables/useScenarioFileLoader", () => ({
@@ -221,5 +222,11 @@ describe("LandingPageScenarios clipboard routing", () => {
       .vm.$emit("bulk-action", "delete", scenarios);
 
     expect(onBulkActionMock).toHaveBeenCalledWith("delete", scenarios);
+  });
+
+  it("opts out of the initial scenario-list fetch on the landing page", () => {
+    mountWithSourceScenario({});
+
+    expect(useBrowserScenariosMock).toHaveBeenCalledWith({ loadOnMount: false });
   });
 });

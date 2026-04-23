@@ -364,6 +364,8 @@ export interface CustomSymbol {
   /** @default [0.5 0.5] */
   anchor?: [number, number];
   sidc: string;
+  fillColor?: string;
+  inheritColor?: boolean;
 }
 
 export interface MapSettings {

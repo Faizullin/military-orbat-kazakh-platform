@@ -17,6 +17,8 @@ export interface CreateSymbolInput {
   code: string;
   renderType: RenderType;
   category?: string | null;
+  fillColor?: string | null;
+  inheritColor?: boolean;
 }
 
 export interface UpdateSymbolInput {
@@ -25,6 +27,8 @@ export interface UpdateSymbolInput {
   code?: string;
   renderType?: RenderType;
   category?: string | null;
+  fillColor?: string | null;
+  inheritColor?: boolean;
 }
 
 export interface ConvertSymbolInput {
@@ -72,6 +76,8 @@ export function useSymbolsApi() {
         code: input.code,
         renderType: input.renderType,
         category: input.category ?? null,
+        fillColor: input.fillColor ?? null,
+        inheritColor: input.inheritColor,
       },
     });
     return (await unwrap(res, await res.json())) as ServerSymbol;

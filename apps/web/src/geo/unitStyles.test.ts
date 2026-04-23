@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import Icon from "ol/style/Icon";
 import { createUnitStyle } from "./unitStyles";
 import { mapReinforcedStatus2Field } from "@/types/scenarioModels";
 
@@ -27,7 +28,9 @@ vi.mock("@/stores/mapSettingsStore.ts", () => ({
   useMapSettingsStore: () => mapSettingsMock,
 }));
 
-function createScenarioWithCustomSymbol() {
+function createScenarioWithCustomSymbol(
+  customSymbolOverrides: Record<string, unknown> = {},
+) {
   return {
     store: {
       state: {
@@ -37,11 +40,21 @@ function createScenarioWithCustomSymbol() {
             name: "Custom",
             src: "data:image/svg+xml;base64,PHN2Zy8+",
             sidc: "10031000000000000000",
+            ...customSymbolOverrides,
           },
         },
       },
     },
   } as any;
+}
+
+function getIconColorFromStyle(style: ReturnType<typeof createUnitStyle>["style"]) {
+  const image = style.getImage();
+  expect(image).toBeInstanceOf(Icon);
+  if (!(image instanceof Icon)) {
+    throw new Error("Expected style image to be an Icon");
+  }
+  return image.getColor();
 }
 
 describe("unit styles rotation", () => {
@@ -188,6 +201,44 @@ describe("unit styles size overrides", () => {
     ).cacheKey;
 
     expect(keyDefault).not.toBe(keyOverride);
+  });
+});
+
+describe("custom symbol colors", () => {
+  it("uses inherited unit fill color for custom symbols by default", () => {
+    const unit = {
+      id: "unit-1",
+      name: "Unit",
+      sidc: "custom1:10031000000000000000:custom-1",
+      _state: { sidc: "custom1:10031000000000000000:custom-1", symbolRotation: 0 },
+      textAmplifiers: {},
+    } as any;
+
+    const { style } = createUnitStyle(
+      unit,
+      { fillColor: "#112233" },
+      createScenarioWithCustomSymbol(),
+    );
+
+    expect(getIconColorFromStyle(style)).toEqual([17, 34, 51, 1]);
+  });
+
+  it("uses custom symbol fixed color when inheritance is disabled", () => {
+    const unit = {
+      id: "unit-1",
+      name: "Unit",
+      sidc: "custom1:10031000000000000000:custom-1",
+      _state: { sidc: "custom1:10031000000000000000:custom-1", symbolRotation: 0 },
+      textAmplifiers: {},
+    } as any;
+
+    const { style } = createUnitStyle(
+      unit,
+      { fillColor: "#112233" },
+      createScenarioWithCustomSymbol({ inheritColor: false, fillColor: "#445566" }),
+    );
+
+    expect(getIconColorFromStyle(style)).toEqual([68, 85, 102, 1]);
   });
 });
 

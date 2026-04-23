@@ -15,6 +15,7 @@ import {
 
 interface UseBrowserScenariosOptions {
   routeName?: string;
+  loadOnMount?: boolean;
 }
 
 export const DEMO_SCENARIOS = [
@@ -43,6 +44,7 @@ export function useBrowserScenarios(options: UseBrowserScenariosOptions = {}) {
   const activeSort = ref<"name" | "lastModified" | "created">("lastModified");
   const activeSortDirection = ref<"asc" | "desc">("desc");
   const routeName = options.routeName ?? MAP_EDIT_MODE_ROUTE;
+  const loadOnMount = options.loadOnMount ?? true;
 
   function getDefaultSortDirection(sort: "name" | "lastModified" | "created") {
     return sort === "name" ? "asc" : "desc";
@@ -215,6 +217,9 @@ export function useBrowserScenarios(options: UseBrowserScenariosOptions = {}) {
   }
 
   onMounted(async () => {
+    if (!loadOnMount) {
+      return;
+    }
     await reloadScenarios();
   });
 
