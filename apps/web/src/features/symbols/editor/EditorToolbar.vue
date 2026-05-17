@@ -8,6 +8,7 @@ import {
   Loader2Icon,
   ArrowLeftIcon,
   ImageDownIcon,
+  MagnetIcon,
   SparklesIcon,
 } from "lucide-vue-next";
 import { useRouter } from "vue-router";
@@ -49,6 +50,18 @@ function addElement(key: string) {
       @click="addElement(key)"
     >
       <component :is="elementRegistry[key]?.icon" class="h-4 w-4" />
+    </Button>
+
+    <div class="bg-border mx-1 h-5 w-px" />
+
+    <Button
+      variant="ghost"
+      size="icon"
+      :class="store.snappingEnabled ? 'bg-accent text-accent-foreground' : ''"
+      :title="store.snappingEnabled ? 'Disable snapping' : 'Enable snapping'"
+      @click="store.toggleSnapping()"
+    >
+      <MagnetIcon class="h-4 w-4" />
     </Button>
 
     <div class="bg-border mx-1 h-5 w-px" />
@@ -99,10 +112,7 @@ function addElement(key: string) {
         title="Export transparent thumbnail and SVG map asset"
         @click="store.convert()"
       >
-        <Loader2Icon
-          v-if="store.isConverting"
-          class="mr-1 h-4 w-4 animate-spin"
-        />
+        <Loader2Icon v-if="store.isConverting" class="mr-1 h-4 w-4 animate-spin" />
         <ImageDownIcon v-else class="mr-1 h-4 w-4" />
         Convert
       </Button>

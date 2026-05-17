@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { CanvasObject, RectShapeFields } from "../types";
 import { useSymbolEditorStore } from "../editorStore";
 
@@ -13,8 +13,11 @@ const emit = defineEmits<{
 }>();
 
 const store = useSymbolEditorStore();
+const shapeRef = ref<any>(null);
 
-const fields = computed(() => props.element.fields as { _type: "shape" } & RectShapeFields);
+const fields = computed(
+  () => props.element.fields as { _type: "shape" } & RectShapeFields,
+);
 const transform = computed(() => props.element.transform);
 const properties = computed(() => props.element.properties);
 
@@ -32,6 +35,10 @@ const config = computed(() => ({
   opacity: fields.value.opacity ?? 1,
   draggable: !properties.value?.locked,
 }));
+
+defineExpose({
+  getNode: () => shapeRef.value?.getNode?.() ?? null,
+});
 
 function onDragStart() {
   store.bringToFront(props.element.id);
@@ -65,6 +72,7 @@ function onTransformEnd(e: any) {
 
 <template>
   <v-rect
+    ref="shapeRef"
     :config="config"
     @click="emit('select', $event)"
     @tap="emit('select', $event)"

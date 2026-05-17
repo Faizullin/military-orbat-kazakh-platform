@@ -13,6 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const store = useSymbolEditorStore();
+const shapeRef = ref<any>(null);
 const fields = computed(() => props.element.fields as { _type: "text" } & TextFields);
 const transform = computed(() => props.element.transform);
 const properties = computed(() => props.element.properties);
@@ -44,6 +45,10 @@ const config = computed(() => ({
   visible: !isEditing.value,
 }));
 
+defineExpose({
+  getNode: () => shapeRef.value?.getNode?.() ?? null,
+});
+
 function onDragStart() {
   store.bringToFront(props.element.id);
 }
@@ -67,7 +72,23 @@ function onTransform(e: any) {
   );
 }
 
-// ─── Inline editing ───────────────────────────────────────
+function onTransformEnd(e: any) {
+  const node = e.target;
+  const width = Math.max(30, node.width() * node.scaleX());
+  node.scaleX(1);
+  node.scaleY(1);
+  store.updateObject(props.element.id, {
+    transform: {
+      ...transform.value,
+      x: node.x(),
+      y: node.y(),
+      rotation: node.rotation(),
+      width,
+    },
+  });
+}
+
+// Inline editing
 const isEditing = ref(false);
 const editorValue = ref("");
 const editorStyle = ref<Record<string, string>>({});
@@ -147,6 +168,7 @@ function onKeyDown(e: KeyboardEvent) {
 
 <template>
   <v-text
+    ref="shapeRef"
     :config="config"
     @click="emit('select', $event)"
     @tap="emit('select', $event)"
@@ -155,7 +177,7 @@ function onKeyDown(e: KeyboardEvent) {
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @transform="onTransform"
-    @transformend="store.pushCurrentToHistory()"
+    @transformend="onTransformEnd"
   />
   <Teleport to="body">
     <textarea

@@ -15,6 +15,10 @@ export function getMapTopographicSymbolSrc(
   return symbol.attachment?.url ?? symbol.thumbnail?.url ?? null;
 }
 
+export function getSymbolPreviewSrc(symbol: ServerSymbolListItem): string | null {
+  return symbol.thumbnail?.url ?? symbol.attachment?.url ?? null;
+}
+
 function customSymbolSidc(sidc: string, id: string) {
   return `${CUSTOM_SYMBOL_PREFIX}${sidc}:${id}`;
 }
@@ -47,17 +51,10 @@ export function useMapTopographicSymbols(scenario: TScenario) {
     }
   }
 
-  function findExistingScenarioSymbol(source: ServerSymbolListItem) {
-    const src = getMapTopographicSymbolSrc(source);
-    if (!src) return null;
-
+  function findExistingScenarioSymbol(src: string, name: string) {
     return (
       Object.values(scenario.store.state.customSymbolMap).find(
-        (symbol) =>
-          symbol.name === source.name &&
-          symbol.src === src &&
-          symbol.fillColor === (source.fillColor ?? undefined) &&
-          (symbol.inheritColor ?? true) === (source.inheritColor ?? true),
+        (symbol) => symbol.name === name && symbol.src === src,
       ) ?? null
     );
   }
@@ -66,8 +63,24 @@ export function useMapTopographicSymbols(scenario: TScenario) {
     const src = getMapTopographicSymbolSrc(source);
     if (!src) return null;
 
-    const existing = findExistingScenarioSymbol(source);
+    const newFillColor = source.fillColor ?? undefined;
+    const newInheritColor = source.inheritColor ?? true;
+
+    console.log("[registerSymbol] source:", source.name, "| server fillColor:", source.fillColor, "| server inheritColor:", source.inheritColor, "| resolved newFillColor:", newFillColor, "| newInheritColor:", newInheritColor);
+
+    const existing = findExistingScenarioSymbol(src, source.name);
     if (existing) {
+      console.log("[registerSymbol] found existing id:", existing.id, "| existing.fillColor:", existing.fillColor, "| existing.inheritColor:", existing.inheritColor);
+      if (existing.fillColor !== newFillColor || existing.inheritColor !== newInheritColor) {
+        console.log("[registerSymbol] UPDATING existing entry with new colors");
+        scenario.settings.updateCustomSymbol(existing.id, {
+          fillColor: newFillColor,
+          inheritColor: newInheritColor,
+        });
+        clearUnitStyleCache();
+      } else {
+        console.log("[registerSymbol] colors unchanged, no update needed");
+      }
       return customSymbolSidc(existing.sidc, existing.id);
     }
 
@@ -75,9 +88,10 @@ export function useMapTopographicSymbols(scenario: TScenario) {
       name: source.name,
       src,
       sidc: DEFAULT_TOPOGRAPHIC_SIDC,
-      fillColor: source.fillColor ?? undefined,
-      inheritColor: source.inheritColor ?? true,
+      fillColor: newFillColor,
+      inheritColor: newInheritColor,
     });
+    console.log("[registerSymbol] created new entry id:", registered.id, "| fillColor:", registered.fillColor, "| inheritColor:", registered.inheritColor);
     clearUnitStyleCache();
 
     return customSymbolSidc(registered.sidc, registered.id);
@@ -91,6 +105,7 @@ export function useMapTopographicSymbols(scenario: TScenario) {
     error,
     loadSymbols,
     getSymbolSrc: getMapTopographicSymbolSrc,
+    getSymbolPreviewSrc,
     registerSymbol,
   };
 }

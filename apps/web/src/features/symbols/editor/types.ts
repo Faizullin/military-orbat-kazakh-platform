@@ -158,7 +158,7 @@ export interface CanvasContent {
 export const DEFAULT_BOARD: BoardObject = {
   id: "board",
   type: "board",
-  transform: { x: 0, y: 0, width: 800, height: 600 },
+  transform: { x: 0, y: 0, width: 500, height: 600 },
   fields: { backgroundColor: "#ffffff" },
 };
 

@@ -6,6 +6,7 @@ import { env } from "./lib/env";
 import { auth } from "./lib/auth";
 import { scenarios } from "./routes/scenarios";
 import { symbols } from "./routes/symbols";
+import { storage } from "./routes/storage";
 import { upload } from "./routes/upload";
 import { ai } from "./routes/ai";
 
@@ -24,6 +25,10 @@ const app = new Hono()
   .route("/api/symbols", symbols)
   .route("/api/symbols", upload)
   .route("/api/ai", ai);
+
+if (env.STORAGE_PROVIDER === "local") {
+  app.route("/media/public", storage);
+}
 
 export type AppType = typeof app;
 

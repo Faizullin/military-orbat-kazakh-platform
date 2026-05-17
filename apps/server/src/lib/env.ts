@@ -18,8 +18,8 @@ const envSchema = z.object({
     .transform((s) => s.split(",").map((o) => o.trim())),
 
   // Storage
-  STORAGE_PROVIDER: z.enum(["cloudinary", "vercel", "local"]).default("cloudinary"),
-  UPLOAD_FOLDER_PREFIX: z.string().default("military-orbat"),
+  STORAGE_PROVIDER: z.enum(["cloudinary", "vercel", "local"]),
+  UPLOAD_FOLDER_PREFIX: z.string(),
 
   // Cloudinary (optional — required only when STORAGE_PROVIDER=cloudinary)
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
@@ -32,7 +32,14 @@ const envSchema = z.object({
   // AI (optional — required only for symbol generation, per-provider)
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
+  MOONSHOT_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
+
+  // LangSmith tracing (optional)
+  LANGCHAIN_TRACING: z.string().default("false"),
+  LANGSMITH_API_KEY: z.string().default(""),
+  LANGSMITH_PROJECT: z.string().default("military-orbat"),
+  LANGSMITH_ENDPOINT: z.string().default("https://api.smith.langchain.com"),
 });
 
 function validateEnv() {

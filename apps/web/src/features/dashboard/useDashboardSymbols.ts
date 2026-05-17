@@ -83,6 +83,8 @@ export function useDashboardSymbols() {
     description: "",
     renderType: "FILE" as RenderType,
     category: "",
+    inheritColor: true,
+    fillColor: "",
   });
 
   function resetSymbolForm() {
@@ -90,6 +92,8 @@ export function useDashboardSymbols() {
     symbolForm.description = "";
     symbolForm.renderType = "FILE";
     symbolForm.category = "";
+    symbolForm.inheritColor = true;
+    symbolForm.fillColor = "";
     symbolDialogError.value = null;
     symbolDialogLoading.value = false;
     editingSymbolId.value = null;
@@ -110,6 +114,8 @@ export function useDashboardSymbols() {
     symbolForm.description = symbol.description ?? "";
     symbolForm.renderType = (symbol.renderType as RenderType) ?? "FILE";
     symbolForm.category = symbol.category ?? "";
+    symbolForm.inheritColor = symbol.inheritColor ?? true;
+    symbolForm.fillColor = symbol.fillColor ?? "";
   }
 
   async function saveSymbolDialog() {
@@ -124,6 +130,8 @@ export function useDashboardSymbols() {
           code: DEFAULT_SYMBOL_CODE,
           renderType: symbolForm.renderType,
           category: symbolForm.category || null,
+          inheritColor: symbolForm.inheritColor,
+          fillColor: !symbolForm.inheritColor && symbolForm.fillColor ? symbolForm.fillColor : null,
         };
         await createSymbol(input);
       } else if (editingSymbolId.value) {
@@ -132,6 +140,8 @@ export function useDashboardSymbols() {
           description: symbolForm.description || undefined,
           renderType: symbolForm.renderType,
           category: symbolForm.category || null,
+          inheritColor: symbolForm.inheritColor,
+          fillColor: !symbolForm.inheritColor && symbolForm.fillColor ? symbolForm.fillColor : null,
         };
         await updateSymbol(editingSymbolId.value, input);
       }

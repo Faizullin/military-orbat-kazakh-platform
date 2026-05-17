@@ -11,10 +11,10 @@ import LineElement from "./elements/LineElement.vue";
 import LineProperties from "./elements/LineProperties.vue";
 import ArrowElement from "./elements/ArrowElement.vue";
 import ArrowProperties from "./elements/ArrowProperties.vue";
-import ArcElement from "./elements/ArcElement.vue";
-import ArcProperties from "./elements/ArcProperties.vue";
 import PolygonElement from "./elements/PolygonElement.vue";
 import PolygonProperties from "./elements/PolygonProperties.vue";
+import ArcElement from "./elements/ArcElement.vue";
+import ArcProperties from "./elements/ArcProperties.vue";
 import TextElement from "./elements/TextElement.vue";
 import TextProperties from "./elements/TextProperties.vue";
 
@@ -23,8 +23,8 @@ import {
   Circle as CircleIcon,
   Minus,
   MoveRight,
-  PieChart,
   Pentagon,
+  PieChart,
   Type,
 } from "lucide-vue-next";
 
@@ -125,29 +125,6 @@ export const elementRegistry: Record<string, ElementDefinition> = {
       properties: { zIndex: 0, locked: false, visible: true },
     }),
   },
-  "shape:arc": {
-    label: "Arc",
-    icon: PieChart,
-    canvasElement: ArcElement,
-    propertiesFields: ArcProperties,
-    createDefault: () => ({
-      type: "shape",
-      transform: { x: 300, y: 300, rotation: 0, scaleX: 1, scaleY: 1 },
-      fields: {
-        _type: "shape",
-        shapeType: "arc",
-        radius: 80,
-        startAngle: 0,
-        endAngle: 270,
-        closed: false,
-        fill: "#3b82f6",
-        stroke: "#000000",
-        strokeWidth: 2,
-        opacity: 1,
-      },
-      properties: { zIndex: 0, locked: false, visible: true },
-    }),
-  },
   "shape:polygon": {
     label: "Polygon",
     icon: Pentagon,
@@ -160,14 +137,37 @@ export const elementRegistry: Record<string, ElementDefinition> = {
         _type: "shape",
         shapeType: "polygon",
         points: [
-          { x: 300, y: 200 },
-          { x: 400, y: 250 },
-          { x: 370, y: 350 },
-          { x: 230, y: 350 },
-          { x: 200, y: 250 },
+          { x: 150, y: 300 },
+          { x: 250, y: 200 },
+          { x: 350, y: 200 },
+          { x: 350, y: 400 },
+          { x: 250, y: 400 },
         ],
         closed: true,
-        fill: "#3b82f6",
+        fill: "none",
+        stroke: "#000000",
+        strokeWidth: 2,
+        opacity: 1,
+      },
+      properties: { zIndex: 0, locked: false, visible: true },
+    }),
+  },
+  "shape:arc": {
+    label: "Arc",
+    icon: PieChart,
+    canvasElement: ArcElement,
+    propertiesFields: ArcProperties,
+    createDefault: () => ({
+      type: "shape",
+      transform: { x: 250, y: 300, rotation: 0, scaleX: 1, scaleY: 1 },
+      fields: {
+        _type: "shape",
+        shapeType: "arc",
+        radius: 80,
+        startAngle: 0,
+        endAngle: 180,
+        closed: false,
+        fill: "none",
         stroke: "#000000",
         strokeWidth: 2,
         opacity: 1,
@@ -200,8 +200,8 @@ export const TOOLBAR_ELEMENT_KEYS = [
   "shape:circle",
   "shape:line",
   "shape:arrow",
-  "shape:arc",
   "shape:polygon",
+  "shape:arc",
   "text",
 ] as const;
 

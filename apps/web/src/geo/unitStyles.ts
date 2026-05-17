@@ -9,6 +9,9 @@ import { hashObject, wordWrap } from "@/utils";
 import { useMapSettingsStore } from "@/stores/mapSettingsStore.ts";
 import type { TScenario } from "@/scenariostore";
 import { CUSTOM_SYMBOL_PREFIX, CUSTOM_SYMBOL_SLICE } from "@/config/constants.ts";
+import { CUSTOM_SYMBOL_SID_INDEX } from "@/symbology/sidc.ts";
+
+import { AFFILIATION_FILL_COLORS } from "@/features/symbols/colors";
 
 export type UnitLabelData = {
   yOffset: number;
@@ -100,11 +103,29 @@ export function createUnitStyle(
     const customSymbolSize =
       baseMapSymbolSize * (mapSettingsStore.mapCustomIconScale || 1.7);
     const customSymbol = scenario.store.state.customSymbolMap[customSymbolId];
-    const customSymbolColor = color
+    const side = scenario.store.state.sideMap[unit._sid!];
+
+    let customSymbolColor = color
       ? color
       : customSymbol?.inheritColor === false
         ? customSymbol.fillColor || symbolOptions?.fillColor
         : symbolOptions?.fillColor;
+
+    if (!customSymbolColor && customSymbol?.inheritColor !== false) {
+      if (side) {
+        if (side.symbolOptions?.fillColor) {
+          customSymbolColor = side.symbolOptions.fillColor;
+        } else if (side.standardIdentity) {
+           customSymbolColor = AFFILIATION_FILL_COLORS[side.standardIdentity];
+        }
+      }
+      
+      if (!customSymbolColor) {
+        customSymbolColor = AFFILIATION_FILL_COLORS[sidc[CUSTOM_SYMBOL_SID_INDEX]];
+      }
+    }
+
+    console.log("[unitStyles] unit._sid:", unit._sid, "| side.name:", side?.name, "| sidc[sid_index]:", sidc[CUSTOM_SYMBOL_SID_INDEX], "| FINAL color:", customSymbolColor);
     const cacheKey =
       customSymbolId +
       hashObject({ symbolRotationDeg, customSymbolColor, customSymbolSize });

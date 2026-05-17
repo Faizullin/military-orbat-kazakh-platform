@@ -23,7 +23,7 @@ const config: runtime.GetPrismaClientConfig = {
       "value": "prisma-client"
     },
     "output": {
-      "value": "C:\\Users\\osman\\Desktop\\OSMANS_PROJECTS\\military-orbat-kazakh-platform\\packages\\db\\src\\generated\\prisma",
+      "value": "C:\\Users\\osman\\Desktop\\OSMANPROJECTS\\military-orbat-platform\\packages\\db\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -37,7 +37,7 @@ const config: runtime.GetPrismaClientConfig = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\osman\\Desktop\\OSMANS_PROJECTS\\military-orbat-kazakh-platform\\packages\\db\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\osman\\Desktop\\OSMANPROJECTS\\military-orbat-platform\\packages\\db\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativePath": "../../../prisma",

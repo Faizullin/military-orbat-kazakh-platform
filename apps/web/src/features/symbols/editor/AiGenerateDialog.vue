@@ -28,7 +28,13 @@ import {
 } from "@/features/api/ai";
 import { renderContentToPng } from "../renderToPng";
 import { useSymbolEditorStore } from "./editorStore";
-import type { CanvasContent } from "./types";
+import {
+  DEFAULT_BOARD,
+  type CanvasContent,
+  type CanvasFields,
+  type CanvasObject,
+  type CanvasObjectTransform,
+} from "./types";
 
 type AiProvider = AiGenerateRequest["provider"];
 
@@ -37,6 +43,7 @@ const AUTO_REFINE_LIMIT = 3;
 const PROVIDER_OPTIONS: Array<{ value: AiProvider; label: string }> = [
   { value: "google", label: "Google - Gemini 3 Flash Preview" },
   { value: "anthropic", label: "Anthropic - Claude Sonnet 4.5" },
+  { value: "kimi", label: "Kimi - K2.6" },
 ];
 
 const props = defineProps<{
@@ -131,27 +138,94 @@ function clearFile() {
   resetResult();
 }
 
+function scaleValue(value: number | null | undefined, factor: number) {
+  return value == null ? value : value * factor;
+}
+
+function scaleOptionalValue(value: number | undefined, factor: number) {
+  return value === undefined ? value : value * factor;
+}
+
+function scaleTransform(
+  transform: CanvasObjectTransform,
+  scaleX: number,
+  scaleY: number,
+): CanvasObjectTransform {
+  return {
+    ...transform,
+    x: transform.x * scaleX,
+    y: transform.y * scaleY,
+    width: scaleValue(transform.width, scaleX),
+    height: scaleValue(transform.height, scaleY),
+  };
+}
+
+function scaleFields(
+  fields: CanvasFields,
+  scaleX: number,
+  scaleY: number,
+): CanvasFields {
+  const uniformScale = (scaleX + scaleY) / 2;
+  if (fields._type !== "shape") return fields;
+
+  if (fields.shapeType === "circle" || fields.shapeType === "arc") {
+    return {
+      ...fields,
+      radius: fields.radius * uniformScale,
+      strokeWidth: scaleOptionalValue(fields.strokeWidth, uniformScale),
+    };
+  }
+  if (fields.shapeType === "line" || fields.shapeType === "arrow") {
+    return {
+      ...fields,
+      x1: fields.x1 * scaleX,
+      y1: fields.y1 * scaleY,
+      x2: fields.x2 * scaleX,
+      y2: fields.y2 * scaleY,
+      strokeWidth: scaleOptionalValue(fields.strokeWidth, uniformScale),
+      ...(fields.shapeType === "arrow"
+        ? { arrowSize: scaleOptionalValue(fields.arrowSize, uniformScale) }
+        : {}),
+    };
+  }
+  if (fields.shapeType === "polygon") {
+    return {
+      ...fields,
+      points: fields.points.map((point) => ({
+        x: point.x * scaleX,
+        y: point.y * scaleY,
+      })),
+      strokeWidth: scaleOptionalValue(fields.strokeWidth, uniformScale),
+    };
+  }
+  return {
+    ...fields,
+    strokeWidth: scaleOptionalValue(fields.strokeWidth, uniformScale),
+  };
+}
+
 function resultToCanvasContent(response: AiGenerateResponse): CanvasContent {
+  const targetBoard = DEFAULT_BOARD.transform;
+  const scaleX = targetBoard.width / Math.max(1, response.board.width);
+  const scaleY = targetBoard.height / Math.max(1, response.board.height);
+
   return {
     version: "1.0",
     board: {
       id: "board",
       type: "board",
       transform: {
-        x: 0,
-        y: 0,
-        width: response.board.width,
-        height: response.board.height,
+        ...targetBoard,
       },
       fields: { backgroundColor: response.board.backgroundColor ?? "#ffffff" },
     },
     objects: response.objects.map((object, index) => ({
       id: `ai-${iteration.value}-${index}`,
-      type: object.type,
-      transform: object.transform,
+      type: object.fields._type === "text" ? "text" : "shape",
+      transform: scaleTransform(object.transform, scaleX, scaleY),
       style: object.style,
-      fields: object.fields,
-    })) as CanvasContent["objects"],
+      fields: scaleFields(object.fields as CanvasFields, scaleX, scaleY),
+    })) as CanvasObject[],
   };
 }
 
@@ -159,10 +233,11 @@ async function renderResultToImagePart(
   response: AiGenerateResponse,
 ): Promise<AiImagePart> {
   const content = resultToCanvasContent(response);
+  const board = content.board.transform;
   const blob = await renderContentToPng(
     JSON.stringify(content),
-    response.board.width,
-    response.board.height,
+    board.width,
+    board.height,
     1,
     true,
   );

@@ -34,8 +34,8 @@ export const AICanvasObjectSchema = z.object({
 export type AICanvasObject = z.infer<typeof AICanvasObjectSchema>;
 
 export const AIBoardSchema = z.object({
-  width: z.number().min(50).max(4096).describe("Canvas board width in pixels"),
-  height: z.number().min(50).max(4096).describe("Canvas board height in pixels"),
+  width: z.number().describe("Canvas board width in pixels (typically 50–4096)"),
+  height: z.number().describe("Canvas board height in pixels (typically 50–4096)"),
   backgroundColor: z
     .string()
     .optional()

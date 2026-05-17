@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { CanvasObject, ArcShapeFields } from "../types";
 import { useSymbolEditorStore } from "../editorStore";
 
@@ -13,7 +13,10 @@ const emit = defineEmits<{
 }>();
 
 const store = useSymbolEditorStore();
-const fields = computed(() => props.element.fields as { _type: "shape" } & ArcShapeFields);
+const shapeRef = ref<any>(null);
+const fields = computed(
+  () => props.element.fields as { _type: "shape" } & ArcShapeFields,
+);
 const transform = computed(() => props.element.transform);
 const properties = computed(() => props.element.properties);
 
@@ -26,7 +29,7 @@ const config = computed(() => {
     innerRadius: 0,
     outerRadius: fields.value.radius,
     angle: sweep,
-    rotation: fields.value.startAngle,
+    rotation: fields.value.startAngle + (transform.value.rotation ?? 0),
     closed: fields.value.closed,
     fill: fields.value.closed ? (fields.value.fill ?? "#3b82f6") : undefined,
     stroke: fields.value.stroke ?? "#000000",
@@ -34,6 +37,10 @@ const config = computed(() => {
     opacity: fields.value.opacity ?? 1,
     draggable: !properties.value?.locked,
   };
+});
+
+defineExpose({
+  getNode: () => shapeRef.value?.getNode?.() ?? null,
 });
 
 function onDragStart() {
@@ -53,7 +60,12 @@ function onTransformEnd(e: any) {
   node.scaleX(1);
   node.scaleY(1);
   store.updateObject(props.element.id, {
-    transform: { ...transform.value, x: node.x(), y: node.y(), rotation: node.rotation() },
+    transform: {
+      ...transform.value,
+      x: node.x(),
+      y: node.y(),
+      rotation: node.rotation() - fields.value.startAngle,
+    },
     fields: { ...fields.value, radius: Math.max(2, fields.value.radius * scaleX) },
   });
 }
@@ -61,6 +73,7 @@ function onTransformEnd(e: any) {
 
 <template>
   <v-arc
+    ref="shapeRef"
     :config="config"
     @click="emit('select', $event)"
     @tap="emit('select', $event)"

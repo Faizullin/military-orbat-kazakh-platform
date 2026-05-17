@@ -37,7 +37,10 @@ function attrs(values: Record<string, unknown>): string {
     .join(" ");
 }
 
-function objectTransform(element: CanvasObject, includePosition = true): string | undefined {
+function objectTransform(
+  element: CanvasObject,
+  includePosition = true,
+): string | undefined {
   const transform = element.transform;
   const steps: string[] = [];
   if (includePosition && (transform.x || transform.y)) {
@@ -52,10 +55,11 @@ function objectTransform(element: CanvasObject, includePosition = true): string 
   return steps.length ? steps.join(" ") : undefined;
 }
 
-function shapePaint(fields: ShapeFields) {
+function shapePaint(fields: ShapeFields, forceWhiteFill = false) {
+  const fill = "fill" in fields ? (fields.fill ?? "none") : "none";
   return {
-    fill: "fill" in fields ? (fields.fill ?? "none") : "none",
-    stroke: fields.stroke || undefined,
+    fill: forceWhiteFill && fill !== "none" ? "#ffffff" : fill,
+    stroke: forceWhiteFill && fields.stroke ? "#ffffff" : fields.stroke || undefined,
     "stroke-width": fields.strokeWidth,
     "stroke-linecap": "lineCap" in fields ? fields.lineCap : undefined,
     "stroke-dasharray":
@@ -66,7 +70,11 @@ function shapePaint(fields: ShapeFields) {
   };
 }
 
-function renderRect(element: CanvasObject, fields: RectShapeFields): string {
+function renderRect(
+  element: CanvasObject,
+  fields: RectShapeFields,
+  forceWhiteFill = false,
+): string {
   return `<rect ${attrs({
     x: 0,
     y: 0,
@@ -74,36 +82,40 @@ function renderRect(element: CanvasObject, fields: RectShapeFields): string {
     height: element.transform.height ?? 100,
     rx: fields.cornerRadius,
     transform: objectTransform(element),
-    ...shapePaint(fields),
+    ...shapePaint(fields, forceWhiteFill),
   })}/>`;
 }
 
-function renderCircle(element: CanvasObject, fields: CircleShapeFields): string {
+function renderCircle(
+  element: CanvasObject,
+  fields: CircleShapeFields,
+  forceWhiteFill = false,
+): string {
   return `<circle ${attrs({
     cx: 0,
     cy: 0,
     r: fields.radius,
     transform: objectTransform(element),
-    ...shapePaint(fields),
+    ...shapePaint(fields, forceWhiteFill),
   })}/>`;
 }
 
-function renderLine(fields: LineShapeFields): string {
+function renderLine(
+  element: CanvasObject,
+  fields: LineShapeFields,
+  forceWhiteFill = false,
+): string {
   return `<line ${attrs({
     x1: fields.x1,
     y1: fields.y1,
     x2: fields.x2,
     y2: fields.y2,
-    ...shapePaint(fields),
+    transform: objectTransform(element),
+    ...shapePaint(fields, forceWhiteFill),
   })}/>`;
 }
 
-function arrowHeadPath(
-  tipX: number,
-  tipY: number,
-  angle: number,
-  size: number,
-): string {
+function arrowHeadPath(tipX: number, tipY: number, angle: number, size: number): string {
   const backX = tipX - Math.cos(angle) * size;
   const backY = tipY - Math.sin(angle) * size;
   const half = size / 2;
@@ -114,12 +126,23 @@ function arrowHeadPath(
   return `${tipX},${tipY} ${leftX},${leftY} ${rightX},${rightY}`;
 }
 
-function renderArrow(fields: ArrowShapeFields): string {
-  const color = fields.stroke ?? "#000000";
+function renderArrow(
+  element: CanvasObject,
+  fields: ArrowShapeFields,
+  forceWhiteFill = false,
+): string {
+  const color = forceWhiteFill ? "#ffffff" : (fields.stroke ?? "#000000");
   const size = fields.arrowSize ?? 10;
   const angle = Math.atan2(fields.y2 - fields.y1, fields.x2 - fields.x1);
   const head = fields.arrowHead ?? "end";
-  const parts = [renderLine({ ...fields, shapeType: "line" })];
+  const line = `<line ${attrs({
+    x1: fields.x1,
+    y1: fields.y1,
+    x2: fields.x2,
+    y2: fields.y2,
+    ...shapePaint({ ...fields, shapeType: "line" }, forceWhiteFill),
+  })}/>`;
+  const parts = [line];
 
   if (head === "end" || head === "both") {
     parts.push(
@@ -140,7 +163,7 @@ function renderArrow(fields: ArrowShapeFields): string {
     );
   }
 
-  return `<g>${parts.join("")}</g>`;
+  return `<g ${attrs({ transform: objectTransform(element) })}>${parts.join("")}</g>`;
 }
 
 function polar(radius: number, degrees: number) {
@@ -151,7 +174,11 @@ function polar(radius: number, degrees: number) {
   };
 }
 
-function renderArc(element: CanvasObject, fields: ArcShapeFields): string {
+function renderArc(
+  element: CanvasObject,
+  fields: ArcShapeFields,
+  forceWhiteFill = false,
+): string {
   const sweep = fields.endAngle - fields.startAngle;
   const start = polar(fields.radius, fields.startAngle);
   const end = polar(fields.radius, fields.endAngle);
@@ -164,26 +191,40 @@ function renderArc(element: CanvasObject, fields: ArcShapeFields): string {
   return `<path ${attrs({
     d,
     transform: objectTransform(element),
-    ...shapePaint({
-      ...fields,
-      fill: fields.closed ? (fields.fill ?? "#3b82f6") : "none",
-    }),
+    ...shapePaint(
+      {
+        ...fields,
+        fill: fields.closed ? (fields.fill ?? "#3b82f6") : "none",
+      },
+      forceWhiteFill,
+    ),
   })}/>`;
 }
 
-function renderPolygon(element: CanvasObject, fields: PolygonShapeFields): string {
+function renderPolygon(
+  element: CanvasObject,
+  fields: PolygonShapeFields,
+  forceWhiteFill = false,
+): string {
   const tag = fields.closed === false ? "polyline" : "polygon";
   return `<${tag} ${attrs({
     points: fields.points.map((point) => `${point.x},${point.y}`).join(" "),
     transform: objectTransform(element),
-    ...shapePaint({
-      ...fields,
-      fill: fields.closed === false ? "none" : (fields.fill ?? "#3b82f6"),
-    }),
+    ...shapePaint(
+      {
+        ...fields,
+        fill: fields.closed === false ? "none" : (fields.fill ?? "#3b82f6"),
+      },
+      forceWhiteFill,
+    ),
   })}/>`;
 }
 
-function renderText(element: CanvasObject, fields: TextFields): string {
+function renderText(
+  element: CanvasObject,
+  fields: TextFields,
+  forceWhiteFill = false,
+): string {
   const width = element.transform.width ?? 200;
   const fontSize = fields.fontSize ?? 16;
   const lineHeight = fields.lineHeight ?? 1.2;
@@ -210,41 +251,42 @@ function renderText(element: CanvasObject, fields: TextFields): string {
     "font-style": fields.fontStyle,
     "text-decoration": fields.textDecoration,
     "letter-spacing": fields.letterSpacing,
-    fill: fields.color ?? "#000000",
+    fill: forceWhiteFill ? "#ffffff" : (fields.color ?? "#000000"),
     "text-anchor": textAnchor,
     "dominant-baseline": "text-before-edge",
     "xml:space": "preserve",
   })}>${tspans}</text>`;
 }
 
-function renderObject(element: CanvasObject): string {
+function renderObject(element: CanvasObject, forceWhiteFill = false): string {
   if (element.properties?.visible === false) return "";
 
   const fields = element.fields;
-  if (fields._type === "text") return renderText(element, fields);
+  if (fields._type === "text") return renderText(element, fields, forceWhiteFill);
   if (fields._type !== "shape") return "";
 
   switch (fields.shapeType) {
     case "rect":
-      return renderRect(element, fields);
+      return renderRect(element, fields, forceWhiteFill);
     case "circle":
-      return renderCircle(element, fields);
+      return renderCircle(element, fields, forceWhiteFill);
     case "line":
-      return renderLine(fields);
+      return renderLine(element, fields, forceWhiteFill);
     case "arrow":
-      return renderArrow(fields);
+      return renderArrow(element, fields, forceWhiteFill);
     case "arc":
-      return renderArc(element, fields);
+      return renderArc(element, fields, forceWhiteFill);
     case "polygon":
-      return renderPolygon(element, fields);
+      return renderPolygon(element, fields, forceWhiteFill);
   }
   return "";
 }
 
 export function renderContentToSvg(
   code: string,
-  options: { background?: boolean } = {},
+  options: { background?: boolean; forceWhiteFill?: boolean } = {},
 ): Blob {
+  const { forceWhiteFill = false } = options;
   const content = parseContent(code);
   const { width, height } = content.board.transform;
   const background = options.background
@@ -256,7 +298,7 @@ export function renderContentToSvg(
         fill: content.board.fields.backgroundColor ?? "#ffffff",
       })}/>`
     : "";
-  const body = content.objects.map(renderObject).join("");
+  const body = content.objects.map((o) => renderObject(o, forceWhiteFill)).join("");
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${esc(width)}" height="${esc(height)}" viewBox="0 0 ${esc(width)} ${esc(height)}">${background}${body}</svg>`;
 
   return new Blob([svg], { type: "image/svg+xml" });

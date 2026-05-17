@@ -11,8 +11,78 @@ import {
   type CanvasFields,
   DEFAULT_CONTENT,
 } from "./types";
+import type { SnapGuide } from "./snapUtils";
 
 const HISTORY_LIMIT = 100;
+
+function applyTransformToPoint(
+  point: { x: number; y: number },
+  transform: CanvasObject["transform"],
+) {
+  const scaleX = transform.scaleX ?? 1;
+  const scaleY = transform.scaleY ?? 1;
+  const rotation = ((transform.rotation ?? 0) * Math.PI) / 180;
+  const scaledX = point.x * scaleX;
+  const scaledY = point.y * scaleY;
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+
+  return {
+    x: (transform.x ?? 0) + scaledX * cos - scaledY * sin,
+    y: (transform.y ?? 0) + scaledX * sin + scaledY * cos,
+  };
+}
+
+function shouldNormalizeLineLikeTransform(transform: CanvasObject["transform"]) {
+  return (
+    (transform.x ?? 0) !== 0 ||
+    (transform.y ?? 0) !== 0 ||
+    (transform.rotation ?? 0) !== 0 ||
+    (transform.scaleX ?? 1) !== 1 ||
+    (transform.scaleY ?? 1) !== 1
+  );
+}
+
+function normalizeLineLikeObjects(content: CanvasContent): CanvasContent {
+  return {
+    ...content,
+    objects: content.objects.map((object) => {
+      const fields = object.fields;
+      if (
+        fields._type !== "shape" ||
+        (fields.shapeType !== "line" && fields.shapeType !== "arrow") ||
+        !shouldNormalizeLineLikeTransform(object.transform)
+      ) {
+        return object;
+      }
+
+      const start = applyTransformToPoint(
+        { x: fields.x1, y: fields.y1 },
+        object.transform,
+      );
+      const end = applyTransformToPoint({ x: fields.x2, y: fields.y2 }, object.transform);
+
+      return {
+        ...object,
+        transform: {
+          ...object.transform,
+          x: 0,
+          y: 0,
+          rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
+        },
+        fields: {
+          ...fields,
+          x1: start.x,
+          y1: start.y,
+          x2: end.x,
+          y2: end.y,
+        } as CanvasFields,
+      };
+    }),
+  };
+}
 
 export const useSymbolEditorStore = defineStore("symbolEditor", () => {
   const symbolsApi = useSymbolsApi();
@@ -24,7 +94,10 @@ export const useSymbolEditorStore = defineStore("symbolEditor", () => {
   const isConverting = ref(false);
   const isDirty = ref(false);
   const symbolId = ref<string | null>(null);
+  const symbolInheritColor = ref(true);
   const errorMessage = ref<string | null>(null);
+  const snappingEnabled = ref(true);
+  const snapGuides = ref<SnapGuide[]>([]);
 
   // History (shallow refs — entries are full snapshots, never mutated in place)
   const history = shallowRef<CanvasContent[]>([klona(DEFAULT_CONTENT)]);
@@ -55,10 +128,29 @@ export const useSymbolEditorStore = defineStore("symbolEditor", () => {
     selectedIds.value = ids;
   }
 
-  function loadFromCode(id: string, code: string | null | undefined) {
+  function toggleSnapping() {
+    snappingEnabled.value = !snappingEnabled.value;
+    if (!snappingEnabled.value) snapGuides.value = [];
+  }
+
+  function setSnapGuides(guides: SnapGuide[]) {
+    snapGuides.value = guides;
+  }
+
+  function clearSnapGuides() {
+    snapGuides.value = [];
+  }
+
+  function loadFromCode(
+    id: string,
+    code: string | null | undefined,
+    inheritColor = true,
+  ) {
     symbolId.value = id;
+    symbolInheritColor.value = inheritColor;
     selectedIds.value = [];
     errorMessage.value = null;
+    snapGuides.value = [];
 
     let parsed: CanvasContent | null = null;
     if (code) {
@@ -71,7 +163,7 @@ export const useSymbolEditorStore = defineStore("symbolEditor", () => {
         console.error("Failed to parse symbol code:", e);
       }
     }
-    const next = parsed ?? klona(DEFAULT_CONTENT);
+    const next = normalizeLineLikeObjects(parsed ?? klona(DEFAULT_CONTENT));
     content.value = next;
     history.value = [klona(next)];
     historyIndex.value = 0;
@@ -79,19 +171,21 @@ export const useSymbolEditorStore = defineStore("symbolEditor", () => {
   }
 
   function applyCanvasContent(next: CanvasContent) {
-    content.value = klona(next);
+    content.value = normalizeLineLikeObjects(klona(next));
     selectedIds.value = [];
     pushCurrentToHistory();
   }
 
   function reset() {
     symbolId.value = null;
+    symbolInheritColor.value = true;
     selectedIds.value = [];
     content.value = klona(DEFAULT_CONTENT);
     history.value = [klona(DEFAULT_CONTENT)];
     historyIndex.value = 0;
     clipboard.value = null;
     errorMessage.value = null;
+    snapGuides.value = [];
     isDirty.value = false;
   }
 
@@ -249,7 +343,9 @@ export const useSymbolEditorStore = defineStore("symbolEditor", () => {
       const code = JSON.stringify(content.value);
       const [thumbBlob, attBlob] = await Promise.all([
         renderContentToPng(code, 128, 128, 1, false),
-        Promise.resolve(renderContentToSvg(code)),
+        Promise.resolve(
+          renderContentToSvg(code, { forceWhiteFill: symbolInheritColor.value }),
+        ),
       ]);
       await symbolsApi.convertSymbol(symbolId.value, {
         thumbnail: thumbBlob,
@@ -286,12 +382,18 @@ export const useSymbolEditorStore = defineStore("symbolEditor", () => {
     isConverting,
     isDirty,
     symbolId,
+    symbolInheritColor,
     errorMessage,
+    snappingEnabled,
+    snapGuides,
     clipboard,
     canUndo,
     canRedo,
     // actions
     setSelectedIds,
+    toggleSnapping,
+    setSnapGuides,
+    clearSnapGuides,
     loadFromCode,
     applyCanvasContent,
     reset,

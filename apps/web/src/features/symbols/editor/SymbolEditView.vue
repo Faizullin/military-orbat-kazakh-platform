@@ -27,7 +27,7 @@ onMounted(async () => {
   store.isLoading = true;
   try {
     const sym = await getSymbol(id);
-    store.loadFromCode(sym.id, sym.code ?? null);
+    store.loadFromCode(sym.id, sym.code ?? null, sym.inheritColor ?? true);
   } catch (e) {
     store.errorMessage = e instanceof Error ? e.message : "Failed to load symbol";
   } finally {
@@ -57,9 +57,11 @@ onUnmounted(() => {
     </div>
 
     <div v-else class="flex flex-1 overflow-hidden">
-      <!-- Canvas area -->
-      <div class="flex flex-1 items-start justify-center overflow-auto p-6">
-        <EditorCanvas />
+      <!-- Canvas workspace (gray) - paper floats inside -->
+      <div class="flex-1 overflow-auto bg-slate-100 dark:bg-slate-900">
+        <div class="flex h-max min-h-full w-max min-w-full items-center justify-center p-8">
+          <EditorCanvas />
+        </div>
       </div>
 
       <!-- Properties panel -->

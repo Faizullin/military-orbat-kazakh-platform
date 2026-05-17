@@ -43,7 +43,7 @@ Red (side)
 
 ### Add sub-units
 
-1. Right-click a unit (or click its three-dots menu) → **Add sub-unit**.
+1. Right-click a unit (or click its three-dots menu) → **Create subordinate** (keyboard: `c` on the active unit).
 2. In the dialog, pick:
    - **Name** (e.g. `1st Battalion`).
    - **Echelon** (Battalion, Company, Platoon…). Changes the bars above the symbol.
@@ -72,12 +72,13 @@ If Blue and Red are symmetric forces, build Blue first, then right-click the sid
 
 ### Option B — from the main toolbar (fast)
 
-The bottom-center map toolbar (`MapEditorMainToolbar.vue`) has an **Add symbol** popover:
+The bottom-center map toolbar (`MapEditorMainToolbar.vue`) has an icon picker popover (`SymbolPickerPopover.vue`):
 
-1. Click the **"+"** icon in the toolbar, or press the keyboard shortcut shown on hover.
-2. The **SymbolPickerPopover** opens with four tabs: **Land**, **Sea**, **Air**, and **My Library** (your custom DB symbols).
-3. Click a symbol → the cursor becomes a crosshair → click the map to drop.
-4. The popover closes; the new unit is added under the currently selected side/group.
+1. Click the **chevron-up (▲)** "Select icons" button on the toolbar.
+2. The popover opens with **three** tabs: **Land**, **Sea**, **Air**. Each tab shows a small grid of common icons for that domain plus a custom slot. The "⋮" (DotsMenu) lets you "Add symbol to panel" — i.e. pin an arbitrary symbol into the grid via the full SIDC modal.
+3. Click an icon → it's added under the currently selected side/group at the active position. There is no keyboard shortcut bound for opening this popover.
+
+> The full **My Library / custom DB symbols** browser lives in the standalone Symbol Browser route, not in this popover.
 
 ### Option C — drag from ORBAT tree
 
@@ -85,7 +86,7 @@ Drag a unit from the ORBAT panel directly onto the map.
 
 ### Moving an existing unit
 
-- **Select** the unit on the map → drag it. This records a **state change** at the current scenario time (see Phase 4).
+- **Select** the unit on the map → switch to the **Move tool** → drag it. This records a **state change** at the current scenario time **only when location recording is on** (see Phase 4 — the toggle lives in the ORBAT panel footer; the Move tool is disabled otherwise).
 - Or right-click → **Edit location** for precise lat/lon entry.
 
 ### Symbol appearance
@@ -110,17 +111,25 @@ Drag a unit from the ORBAT panel directly onto the map.
 - **Drag the playhead** to scrub. Units will jump/interpolate to their position at that time.
 - **Zoom**: `+`/`-` buttons on the timeline, or scroll over it. Zoom out to see the whole operation, in to place sub-hour actions.
 
+### Enable recording first
+
+Recording is gated by **two independent toggles** at the bottom of the ORBAT panel (`OrbatPanelFooterToolbar.vue`), each shown as a labeled switch that turns red when active:
+
+- **Unit position** (`isRecordingLocation`) — required to drag units around on the map. The Move tool in the main toolbar is **disabled** until this is on.
+- **Hierarchy** (`isRecordingHierarchy`) — required to commit re-parenting / structural changes from drag operations in the ORBAT tree.
+
+Neither toggle lives in the top toolbar.
+
 ### Record a movement
 
-The editor can record positions automatically as you scrub + drag:
+With **Unit position** recording on:
 
 1. **Set `currentTime`** to the moment the action happens (drag the playhead, or click a time in the header).
-2. **Drag the unit** on the map to its new location.
-3. The move is recorded as a **unit state change** at that timestamp — visible as a pin on the timeline when the unit is selected.
+2. Switch to the **Move tool** in the bottom-center toolbar.
+3. **Drag the unit** on the map to its new location.
+4. The move is recorded as a **unit state change** at that timestamp — visible as a pin on the timeline when the unit is selected.
 
-### Recording mode (optional, for back-to-back moves)
-
-Toggle the **Recording** toggle (top toolbar, circular dot icon). While on, every unit move auto-commits as a state change at `currentTime`. Useful for blocking out a phase line advance across several units.
+If recording is **off** the unit drag is rejected (Move tool is grayed out with a tooltip explaining the gate).
 
 ### Set a unit's initial position
 
@@ -128,7 +137,12 @@ The very first time you place a unit, its state is written **at the scenario sta
 
 ### Playback
 
-The **PlaybackMenu** (toolbar) offers Play/Pause + speed (1×, 2×, 5×, 10×). Hit Play and the playhead advances; units animate between state points.
+The **PlaybackMenu** (toolbar) offers:
+
+- **Play / Pause** — keyboard `k` or `Alt+P`. Default speed advances scenario time by 30 minutes per real second.
+- **Speed up** (`>`) / **Slow down** (`<`) — there are no fixed multiplier presets; each press **doubles or halves** the current rate.
+- **Loop playback** — checkbox; replays from start when the end is reached.
+- **Markers** — `Add marker` stores the current scenario time; up to two markers (start + end) bound a sub-range; `Clear markers` resets them.
 
 ---
 
@@ -145,7 +159,7 @@ The **PlaybackMenu** (toolbar) offers Play/Pause + speed (1×, 2×, 5×, 10×). 
 ### Add an event
 
 1. Scrub the playhead to the moment (or skip this — the dialog lets you set time manually).
-2. In the Events panel, click **"+ Add event"**. The editor drops in a placeholder titled `Event <day>` at the current time.
+2. In the Events panel, click **"Add scenario event"** (button at the bottom of the panel). The editor drops in a placeholder titled `Event <day>` at the current time.
 3. Click the new event → the details panel opens on the right.
 4. Fill in:
    - **Title**: short — e.g. `Red armor at PL Alpha`.
@@ -209,18 +223,23 @@ You **don't** author separate "story steps" — the `ScenarioEvent`s you already
 
 ## Quick reference — keyboard
 
+Bindings live in `KeyboardScenarioActions.vue` (global) plus a few timeline-local handlers. Verified against the source — if a shortcut here doesn't fire, check that no input/popover is focused.
+
 | Action | Shortcut |
 | --- | --- |
 | Undo / Redo | `Ctrl+Z` / `Ctrl+Y` |
-| Select tool | `V` |
-| Move tool | `M` |
-| Add symbol (open picker) | `A` |
-| Draw tool | `D` |
-| Measurement | `R` |
-| Play / pause playback | `Space` |
-| Next / previous event | `]` / `[` |
+| Create subordinate of active unit | `c` |
+| Duplicate active unit | `d` |
+| Toggle Move tool (requires location recording on) | `m` |
+| Zoom map to selection | `z` |
+| Pan map to selection | `p` |
+| Locate active unit (select without zoom) | `l` |
+| Play / pause playback | `k` or `Alt+P` |
+| Speed up / slow down playback | `>` / `<` |
+| Delete selected unit state / feature / waypoint | `Delete` |
+| Clear selection / dismiss | `Esc` |
 
-(Some bindings live in `KeyboardScenarioActions.vue` — verify in-app if a shortcut doesn't fire.)
+> Note: `V` (select tool), `A` (open symbol picker), `R` (measurement), `Space` (play/pause), and `[` / `]` (event next/prev) are **not** bound. Use the on-screen toolbar buttons.
 
 ---
 
@@ -232,3 +251,305 @@ You **don't** author separate "story steps" — the `ScenarioEvent`s you already
 - [ ] Events cover the major beats; each has a `where` target.
 - [ ] Clicking any event in the panel flies the map to the right place and resets the time.
 - [ ] (Once shipped) Play story walks all events in order without a broken image or blank description.
+
+---
+
+## Appendix — Worked example: «Оборона на подступах к Астане»
+
+End-to-end walkthrough mirroring **Phases 1–6** of the main guide, but with every value to enter into the editor given **in Russian** (Soviet/Kazakh military convention). The example builds a one-company defense blocking an M-class highway leading to Astana, with a battalion-sized Blue (синие — противник) attack rolling in from the north.
+
+> **Side colors recap.** This document follows Soviet convention in the *narrative* (красные = мы, синие = противник). The editor's APP-6 renderer paints Friend = blue and Hostile = red, so the visual colors on the map will be **inverted** relative to the prose — that's expected. If you need the rendered map to actually look red-for-us / blue-for-them, swap each side's Standard Identity and accept that the editor will then label "us" as Hostile internally.
+
+> **All form values below are what you literally type into the editor.** The field labels themselves are still English (the UI is not localized).
+
+---
+
+### Phase 1 — Создание сценария (Create the scenario)
+
+Open the landing page → **New scenario**, then fill the form:
+
+| Field (English UI) | Value to enter (Russian) |
+| --- | --- |
+| Name | `Оборона на подступах к Астане` |
+| Description | `Блокирование шоссе М-36 силами 7-й мотострелковой роты. Противник — мотострелковый батальон с танковой ротой, наступает с севера.` |
+| Start time | `00:00` (use exact zero so T+ values map 1:1 to scenario time) |
+| Time zone | `Asia/Almaty` (UTC+5) |
+| Symbology standard | `APP-6` |
+
+Two sides — **rename the defaults**:
+
+| Default | Standard Identity | Rename to | Root unit name | Root echelon | Icon |
+| --- | --- | --- | --- | --- | --- |
+| Side 1 | **Friend** | `Красные (мы)` | `7 мср` | `Company` (echelon code 16) | `Mechanized Infantry` |
+| Side 2 | **Hostile** | `Синие (противник)` | `ТГр "Север"` | `Battalion` (echelon code 17) | `Mechanized Infantry` |
+
+Click **Create**. The editor opens at scenario time `00:00`.
+
+---
+
+### Phase 2 — Построение боевого порядка (Build the ORBAT)
+
+Open the ORBAT panel on the left. For each unit below, right-click the parent → **Create subordinate** (keyboard `c` works on the active unit). Use only **basic icons** — Infantry, Mechanized, Armor, ATGM, Artillery, Recon, Engineer.
+
+#### Красная сторона — мы (defender, root: `7 мср`)
+
+| Name (Russian) | Echelon | Icon | Notes |
+| --- | --- | --- | --- |
+| `1 МСВ` | Platoon | Mechanized Infantry | Forward, left of road |
+| `2 МСВ` | Platoon | Mechanized Infantry | Forward, right of road |
+| `3 МСВ` | Platoon | Mechanized Infantry | Depth — counter-attack reserve |
+| `ТВ` | Platoon | Armor | Танковый взвод, в глубине |
+| `ПТУР` | Section | ATGM | Расчёт ПТУР на гребне |
+| `АРТ (придана)` | Battery | Artillery | Артиллерийская батарея на вызов (off-map) |
+| `Инж. отд.` | Section | Engineer | Сапёры — установка заграждений |
+
+#### Синяя сторона — противник (attacker, root: `ТГр "Север"`)
+
+| Name (Russian) | Echelon | Icon | Notes |
+| --- | --- | --- | --- |
+| `Развед. дозор` | Section | Recon | БРМ-3К ×2, ведёт впереди |
+| `1 МСР` | Company | Mechanized Infantry | Главные силы, левее шоссе |
+| `2 МСР` | Company | Mechanized Infantry | Главные силы, правее шоссе |
+| `ТР` | Company | Armor | Танковая рота, по шоссе |
+| `Инж. взвод` | Platoon | Engineer | Группа разграждения |
+| `Артдн` | Battalion | Artillery | Артдивизион (off-map) |
+
+---
+
+### Phase 3 — Расстановка подразделений (Place units on the map)
+
+Pan the map to the M-36 highway approach to Astana. Pick a chokepoint where the road crosses a low ridge or culvert — that's your **Опорный пункт «Астана-1»**.
+
+**Before you drag anything, turn on `Unit position` recording** (ORBAT panel footer toggle — turns red). The Move tool stays disabled until this is on.
+
+Then with the **Draw tool**, lay down these named geometries first — you'll snap waypoints to them in Phase 4:
+
+| Geometry name (Russian) | Type | Where |
+| --- | --- | --- |
+| `Ор.1 — мост (550 м)` | Point | At the bridge / culvert on the highway, in front of the strongpoint |
+| `Ор.2 — овраг (450 м)` | Point | Ravine to the side of the road |
+| `Ор.3 — памятник (850 м)` | Point | Roadside monument / km-marker |
+| `Ор.4 — камни (800 м)` | Point | Boulder field flanking the road |
+| `Ор.5 — выс. "Лысая" (1500 м)` | Point | Bald hilltop |
+| `Ор.6 — угол леса (2500 м)` | Point | Edge of forest, far approach |
+| `Минное поле + ров` | Polygon | Obstacle belt across the highway at Ор.1 |
+| `Рубеж "Тюльпан" (развёртывания)` | Line | Across the highway, ~4 km from Ор.1 |
+| `Рубеж огня — ПТУР (2500 м)` | Arc | Outer engagement arc, centered on strongpoint |
+| `Рубеж огня — танки (1200 м)` | Arc | Middle engagement arc |
+| `Рубеж огня — БМП (500 м)` | Arc | Inner engagement arc |
+| `СО 1 МСВ` | Polygon (wedge) | From 1 МСВ position to Ор.5 |
+| `СО 2 МСВ` | Polygon (wedge) | From 2 МСВ position to Ор.4 |
+| `СО 3 МСВ` | Polygon (wedge) | From 3 МСВ position to Ор.1 |
+| `СО ТВ` | Polygon (wedge) | From ТВ position to Ор.3 |
+| `Стрелка наступления противника` | Arrow | Wide blue arrow down the highway from north |
+
+Now place each Red unit at scenario time `00:00` (drag from ORBAT tree onto the map):
+
+| Unit | Position |
+| --- | --- |
+| `7 мср` (HQ) | Centered on the strongpoint |
+| `1 МСВ` | ~300 m left of road, just behind crest |
+| `2 МСВ` | ~300 m right of road, just behind crest |
+| `3 МСВ` | ~600 m behind 1 МСВ/2 МСВ, astride road |
+| `ТВ` | In defilade, 500 m behind 3 МСВ |
+| `ПТУР` | On the ridge crest, ~500 m left of road, with line-of-sight to Ор.5/Ор.6 |
+| `Инж. отд.` | At the obstacle belt (Ор.1) |
+
+Place each Blue unit at scenario time `00:00` at the **исходный район (assembly area)** ~25 km north of Ор.1 along the highway:
+
+| Unit | Position |
+| --- | --- |
+| `ТГр "Север"` (HQ) | AA «Север», 25 км по шоссе |
+| `Развед. дозор` | 3 km south of HQ (already screening forward) |
+| `1 МСР` | Lead in column, on road |
+| `2 МСР` | Behind 1 МСР, on road |
+| `ТР` | Center of column |
+| `Инж. взвод` | With 1 МСР |
+| `Артдн` | 8 km behind HQ (off-map fires only) |
+
+---
+
+### Phase 4 — Запись движения по времени (Record movement on the timeline)
+
+This is the heart of the example. Confirm `Unit position` recording is **on**, switch to the **Move tool**, then for each Blue unit scrub the playhead to each T+ time below and drag the unit to the listed waypoint. Each drag commits one **unit state change**.
+
+> **Tip — manual time entry.** Dragging the playhead won't hit minute precision; click the time field above the timeline and type the time directly (`00:01:30`).
+
+#### Movement phases at a glance
+
+```
+                   25 км               4 км   2.5 км   1.2 км   500 м   0
+   КОЛОННА ─────────────────► РАЗВЁРТЫВАНИЕ ─► ПТУР ──► ТАНКИ ──► БМП ──► ЗАГРАЖДЕНИЕ
+   (T+0:00)                    (T+1:30)     (T+2:00) (T+2:30) (T+3:00)  (T+3:15)
+                                            рубеж    рубеж    рубеж     зона
+                                            ПТУР     танков   БМП       поражения
+```
+
+#### Detailed schedule — главные силы синих
+
+| T+ | Дальность до Ор.1 | Метка позиции | Подразделение | Действие |
+| --- | --- | --- | --- | --- |
+| **0:00** | 25 км | **Исх. район «Север»** | ТГр "Север" (Б-) | Переход в наступление, построение в колонну |
+| 0:15 | 22 км | **КПП «Альфа»** | Развед. дозор | Разведка ведёт в 3 км впереди главных сил |
+| 0:35 | 18 км | **КПП «Браво»** (мост) | 1 МСР | Колонна по шоссе |
+| 1:00 | 12 км | **КПП «Чарли»** (перекрёсток) | ТР (центр колонны) | Подтягивание, разведка докладывает «чисто» |
+| 1:15 | 8 км | **Рубеж «Жёлтый»** | Развед. дозор | Контакт с НП красных, отход на доклад |
+| **1:30** | 4 км | **Рубеж «Тюльпан» (развёртывания)** | Весь батальон | **Развёртывание начинается** — колонна → линия, две роты в первом эшелоне |
+| 1:45 | 3.2 км | Рубеж «Зелёный» — слева | 1 МСР | Развёртывание левее шоссе, фронт ~1 км |
+| 1:45 | 3.2 км | Рубеж «Зелёный» — справа | 2 МСР | Развёртывание правее шоссе, фронт ~1 км |
+| 1:45 | 3.5 км | Рубеж «Зелёный» — центр | ТР | По шоссе как ударный элемент прямой наводки |
+| **2:00** | 2.5 км | **Рубеж «Красный» — рубеж ПТУР (Ор.6 / Ор.5)** | Передовые элементы | Пересечение внешнего рубежа — ПТУР красных открывают огонь с гребня |
+| 2:10 | 2.2 км | Рубеж «Красный» — слева | 1 МСР | Подавление гребня бортовыми пушками + дымы |
+| 2:15 | 2.0 км | Рубеж «Красный» — центр | Артдн (off-map) | Огневой налёт по позициям ПТУР |
+| **2:30** | 1.2 км | **Рубеж «Оранжевый» — рубеж танков (Ор.3 / Ор.4)** | ТР | Пересечение среднего рубежа — ТВ красных открывает огонь из глубины |
+| 2:40 | 1.0 км | Рубеж «Оранжевый» — слева | 1 МСР | Перекаты повзводно, подготовка спешивания |
+| 2:45 | 800 м | Рубеж «Оранжевый» — справа | 2 МСР | Перекаты повзводно |
+| **3:00** | 500 м | **Рубеж «Чёрный» — рубеж БМП (Ор.1 / Ор.2)** | Головные взводы | Пересечение внутреннего рубежа — 1/2 МСВ красных ведут заградительный огонь |
+| 3:05 | 400 м | **Объект «Ворота»** (заграждение) | Инж. взвод + головной взвод 1 МСР | Попытка проделывания прохода в минном поле / противотанковом рву |
+| 3:15 | 200 м | Объект «Ворота» | Головной взвод | В зоне поражения — большие потери |
+| **3:30** | 300–500 м | **Рубеж «Чёрный» (предельная линия)** | Батальон | **Атака захлебнулась** — подразделения подавлены |
+| 3:45 | ≥ 800 м | Рубеж «Оранжевый» (отход) | Б- (без головного взвода) | Отход за рубеж досягаемости БМП-огня, перегруппировка для второго эшелона |
+
+#### Why the spread happens at T+1:30 / 4 km
+
+Колонна на шоссе — одна большая цель. Доктринальный момент **развёртывания** — *вне* дальности самого дальнобойного оружия обороны прямой наводкой, т.е. на один рубеж раньше дальности ПТУР (~2.5 км). Поэтому батальон расходится из колонны шириной 2 машины во фронт ~2 км в интервале **T+1:30 → T+2:00**. Это самый зрелищный момент воспроизведения — обязательно отдельное событие («**Развёртывание из колонны во фронт**», `where` = рубеж «Тюльпан»).
+
+#### Per-unit waypoint sets (drag list)
+
+Every line below is one state change. Time = scenario time. Place a state at **both endpoints** of each leg — the editor interpolates linearly, so a missing intermediate state will look like a teleport.
+
+**`1 МСР` (головная, левее шоссе)**
+- T+0:00 → Исх. район «Север» (25 км, на шоссе)
+- T+1:00 → КПП «Чарли» (12 км, на шоссе)
+- T+1:30 → Рубеж «Тюльпан» (4 км, на шоссе)
+- T+1:45 → Рубеж «Зелёный» — слева (3.2 км, ~800 м левее шоссе)
+- T+2:30 → Рубеж «Оранжевый» — слева (1.0 км, 1 км левее шоссе)
+- T+3:00 → Подход к объекту «Ворота» (400 м, на шоссе)
+- T+3:30 → Рубеж культминации (500 м, чуть назад)
+
+**`2 МСР` (правее шоссе)**
+- T+0:00 → Исх. район «Север»
+- T+1:30 → Рубеж «Тюльпан»
+- T+1:45 → Рубеж «Зелёный» — справа (3.2 км, ~800 м правее шоссе)
+- T+2:45 → Рубеж «Оранжевый» — справа (800 м, 1 км правее шоссе)
+- T+3:30 → Рубеж культминации (правее шоссе)
+
+**`ТР` (центр, ударный элемент)**
+- T+0:00 → Исх. район «Север»
+- T+1:00 → КПП «Чарли»
+- T+1:30 → Рубеж «Тюльпан»
+- T+2:30 → Рубеж «Оранжевый» — центр (1.2 км, по шоссе)
+- T+3:30 → Откат к рубежу «Оранжевый»
+
+**`Развед. дозор` (передовое охранение)**
+- T+0:00 → Исх. район «Север»
+- T+0:15 → КПП «Альфа»
+- T+1:15 → Рубеж «Жёлтый» (8 км, контакт)
+- T+1:30 → За боевыми порядками 1 МСР
+
+**`Инж. взвод` (разграждение)**
+- T+0:00 → Исх. район «Север»
+- T+1:30 → Рубеж «Тюльпан»
+- T+3:00 → Объект «Ворота» (группа разграждения)
+
+---
+
+### Phase 5 — Боевые события (Author the events)
+
+Open the Events panel → click **Add scenario event** for each beat below. The placeholder appears as `Event 1`; rename via the right-side details panel. Field-by-field values:
+
+#### Event 1 — переход синих в наступление
+
+| Field (English UI) | Russian value |
+| --- | --- |
+| Title | `Переход синих в наступление` |
+| Sub-title | `T+0:00` |
+| Description | `Тактическая группа «Север» (мсб без одной мср, с танковой ротой) переходит в наступление по шоссе М-36, в 25 км севернее опорного пункта 7 мср. Колонна сформирована, разведка ведёт в 3 км впереди главных сил.` |
+| Where | `Развед. дозор` (units) |
+| External URL | *(оставить пустым)* |
+
+#### Event 2 — развёртывание из колонны во фронт
+
+| Field | Value |
+| --- | --- |
+| Title | `Развёртывание из колонны во фронт` |
+| Sub-title | `T+1:30 — рубеж «Тюльпан», 4 км` |
+| Description | `На рубеже «Тюльпан» (4 км до заграждения) батальон разворачивается из походной колонны в боевой порядок: 1 МСР — слева от шоссе, 2 МСР — справа, танковая рота сохраняет положение по шоссе как ударный элемент. Фронт развёртывания ~2 км.` |
+| Where | `Рубеж «Тюльпан»` (geometry) |
+
+#### Event 3 — рубеж огня ПТУР открыт
+
+| Field | Value |
+| --- | --- |
+| Title | `Рубеж огня ПТУР открыт` |
+| Sub-title | `T+2:00 — 2.5 км` |
+| Description | `Передовые элементы синих пересекают внешний рубеж открытия огня (~2.5 км). Расчёт ПТУР красных открывает огонь с гребня по ориентирам 5 и 6. Это — внешний из трёх советских рубежей открытия огня.` |
+| Where | `ПТУР` (units) |
+
+#### Event 4 — танки красных вступают в бой
+
+| Field | Value |
+| --- | --- |
+| Title | `Танки красных вступают в бой` |
+| Sub-title | `T+2:30 — 1.2 км` |
+| Description | `Танковая рота противника пересекает средний рубеж огня (~1.2 км). Танковый взвод красных открывает огонь из укрытия с фланговых позиций по ориентирам 3 и 4.` |
+| Where | `ТВ` (units) |
+
+#### Event 5 — заградительный огонь
+
+| Field | Value |
+| --- | --- |
+| Title | `Заградительный огонь` |
+| Sub-title | `T+3:00 — 500 м, зона поражения` |
+| Description | `Головные взводы синих пересекают внутренний рубеж (~500 м). 1 МСВ и 2 МСВ красных открывают заградительный огонь из 30-мм пушек БМП и стрелкового оружия. Это — основная зона поражения.` |
+| Where | `1 МСВ`, `2 МСВ` (units, multi-select) |
+
+#### Event 6 — попытка проделывания прохода
+
+| Field | Value |
+| --- | --- |
+| Title | `Попытка проделывания прохода в заграждении` |
+| Sub-title | `T+3:15 — объект «Ворота»` |
+| Description | `Инженерный взвод синих с головным взводом 1 МСР пытается проделать проход в минном поле и противотанковом рву на шоссе. Подавлены огнём из глубины и с флангов в зоне поражения.` |
+| Where | `Минное поле + ров` (geometry) |
+
+#### Event 7 — атака захлебнулась
+
+| Field | Value |
+| --- | --- |
+| Title | `Атака захлебнулась` |
+| Sub-title | `T+3:30 — рубеж «Чёрный»` |
+| Description | `Наступление синих останавливается перед заграждением. Головные взводы потеряли боеспособность; уцелевшие подразделения отходят за рубеж «Оранжевый» для перегруппировки. Шоссе на Астану заблокировано.` |
+| Where | `Рубеж «Чёрный»` (geometry) |
+| `maxZoom` | `13` (чтобы карта не зумилась слишком близко) |
+
+After all seven events are saved, click each event in the panel — the map should fly to its `where` and the playhead snap to its time.
+
+---
+
+### Phase 6 — Воспроизведение (Playback / once Story Mode lands)
+
+1. Scroll the playhead to `00:00` and press **Play** (`k` or `Alt+P`).
+2. Speed up two clicks (`>` `>`) — one real second now equals 2 minutes of scenario time, so the full 4-hour engagement plays in ~2 minutes.
+3. Watch for these visual checkpoints in order — if any are missing, you skipped a state change:
+   - `00:00` — все силы синих в исходном районе северного края карты.
+   - `00:30` — головная рота на шоссе, разведка впереди.
+   - `01:30` — **развёртывание видно явно**: батальон расширяется с двух машин до фронта ~2 км между рубежами «Тюльпан» и «Зелёный».
+   - `02:00` — головные элементы пересекают внешнюю дугу.
+   - `02:30` — танковая рота на средней дуге.
+   - `03:00` — головные взводы упираются в заграждение.
+   - `03:30` — синие останавливаются и откатываются.
+
+4. Once Story Mode is wired (see [TODO.md](TODO.md)), the same seven events play as narrated steps — no extra authoring needed.
+
+---
+
+### Operating tips
+
+- **Scenario start time `00:00:00`** — каждое значение `T+` из таблицы соответствует календарному времени сценария 1:1, без смещений.
+- **Минутная точность** — drag не даст 1-минутной точности; для каждой ключевой остановки кликните по полю времени над таймлайном и введите `HH:MM:SS` вручную.
+- **Recording must stay on** — если включён только `Hierarchy`, перетаскивание юнитов на карте будет проигнорировано. Активируйте именно `Unit position`.
+- **Развёртывание** между T+1:30 и T+2:00 — поставьте состояние **на оба конца** для каждого манёвренного подразделения. Иначе при воспроизведении подразделение телепортируется, а не «расходится».
+- **Геометрию рисуйте сначала** — рубежи «Жёлтый/Тюльпан/Зелёный/Красный/Оранжевый/Чёрный» как именованные линии. Тогда при перетаскивании юнитов будет видно, к какому рубежу вы их привязываете.
+- **Многоюнитовое `where`** — для Event 5 (заградительный огонь) выберите `1 МСВ` и `2 МСВ` оба; карта зум-фитом охватит обе позиции.
+- **Артдн / `АРТ (придана)`** — вне карты, движение не записывается; используются только в описаниях событий.

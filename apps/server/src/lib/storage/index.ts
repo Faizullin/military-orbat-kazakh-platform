@@ -1,5 +1,6 @@
 import { env } from "../env";
 import { CloudinaryService } from "./cloudinary";
+import { LocalStorageService } from "./local";
 import type { IStorageProvider, StorageProviderType } from "./types";
 import { VercelBlobService } from "./vercel-blob";
 
@@ -13,7 +14,11 @@ export function getStorageProvider(providerName?: StorageProviderType): IStorage
       return CloudinaryService;
     case "vercel":
       return VercelBlobService;
+    case "local":
+      return LocalStorageService;
     default:
-      throw new Error(`Unknown storage provider: ${provider}. Use "cloudinary" or "vercel".`);
+      throw new Error(
+        `Unknown storage provider: ${provider}. Use "cloudinary", "vercel", or "local".`,
+      );
   }
 }

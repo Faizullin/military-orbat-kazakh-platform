@@ -13,6 +13,7 @@ import { useMapTopographicSymbols } from "./useMapTopographicSymbols";
 interface Props {
   addUnit: (sidc: string) => void;
   disabled?: boolean;
+  activeColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -30,7 +31,6 @@ const {
   loaded,
   error,
   loadSymbols,
-  getSymbolSrc,
   registerSymbol,
 } = useMapTopographicSymbols(scenario);
 
@@ -128,11 +128,24 @@ function placeSymbol(symbol: ServerSymbolListItem) {
             class="hover:border-primary focus-visible:ring-ring/50 bg-background flex aspect-square min-w-0 items-center justify-center overflow-hidden rounded-md border border-transparent p-1.5 transition outline-none focus-visible:ring-[3px]"
             @click="placeSymbol(symbol)"
           >
-            <img
-              :src="getSymbolSrc(symbol)!"
-              :alt="symbol.name"
-              class="h-full w-full object-contain"
-            />
+            <div class="relative isolate h-full w-full">
+              <img
+                :src="(symbol.attachment?.url ?? symbol.thumbnail?.url)!"
+                :alt="symbol.name"
+                crossorigin="anonymous"
+                class="h-full w-full object-contain"
+              />
+              <div
+                v-if="!symbol.inheritColor && symbol.fillColor"
+                class="absolute inset-0 mix-blend-multiply"
+                :style="{ backgroundColor: symbol.fillColor }"
+              />
+              <div
+                v-else-if="symbol.inheritColor && props.activeColor"
+                class="absolute inset-0 mix-blend-multiply"
+                :style="{ backgroundColor: props.activeColor }"
+              />
+            </div>
           </button>
         </div>
       </ScrollArea>

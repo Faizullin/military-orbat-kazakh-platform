@@ -41,6 +41,7 @@ import { CUSTOM_SYMBOL_PREFIX } from "@/config/constants.ts";
 import { useRecordingStore } from "@/stores/recordingStore";
 import MapTopographicSymbolPicker from "@/features/symbols/map/MapTopographicSymbolPicker.vue";
 import { getCustomSymbolId, getFullUnitSidc } from "@/symbology/helpers";
+import { AFFILIATION_FILL_COLORS } from "@/features/symbols/colors";
 
 const props = withDefaults(
   defineProps<{
@@ -111,6 +112,10 @@ const symbolOptions = computed(() =>
       }
     : {},
 );
+
+const activeColor = computed(() => {
+  return (symbolOptions.value as { fillColor?: string }).fillColor || AFFILIATION_FILL_COLORS[currentSid.value];
+});
 
 const canPlaceUnit = computed(
   () =>
@@ -374,6 +379,7 @@ watchEffect(() => {
           v-if="props.canAddUnits"
           :add-unit="addUnit"
           :disabled="!canPlaceUnit"
+          :active-color="activeColor"
         />
       </div>
     </section>

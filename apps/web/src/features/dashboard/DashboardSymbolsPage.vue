@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import CategoryCombobox from "./CategoryCombobox.vue";
 import SymbolsDataTable from "./SymbolsDataTable.vue";
 import {
@@ -223,6 +224,41 @@ const uploadAccept = computed(() =>
                 <SelectItem value="EDITOR">Editor</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div class="flex items-center justify-between rounded-lg border p-3">
+            <div class="grid gap-0.5">
+              <Label for="dashboard-symbol-inherit-color" class="cursor-pointer">
+                Inherit scenario color
+              </Label>
+              <p class="text-muted-foreground text-xs">
+                Symbol tinted by the unit's side color on the map
+              </p>
+            </div>
+            <Switch
+              id="dashboard-symbol-inherit-color"
+              :checked="symbolForm.inheritColor"
+              @update:checked="symbolForm.inheritColor = $event"
+            />
+          </div>
+
+          <div v-if="!symbolForm.inheritColor" class="grid gap-2">
+            <Label for="dashboard-symbol-fill-color">Fill color</Label>
+            <div class="flex gap-2">
+              <input
+                id="dashboard-symbol-fill-color-picker"
+                type="color"
+                :value="symbolForm.fillColor || '#000000'"
+                class="h-9 w-10 cursor-pointer rounded-md border bg-transparent p-1"
+                @input="symbolForm.fillColor = ($event.target as HTMLInputElement).value"
+              />
+              <Input
+                id="dashboard-symbol-fill-color"
+                v-model="symbolForm.fillColor"
+                placeholder="#000000"
+                class="font-mono"
+              />
+            </div>
           </div>
 
           <DialogFooter>

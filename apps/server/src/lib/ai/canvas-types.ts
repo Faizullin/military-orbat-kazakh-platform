@@ -21,11 +21,10 @@ export const CanvasObjectStyleSchema = z.object({
   borderWidth: z.number().optional().default(0),
   borderRadius: z.number().optional().default(0),
   opacity: z.number().optional().default(1),
-  shadow: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const ShapeBaseSchema = z.object({
-  fill: z.string().optional().default("#3b82f6"),
+  fill: z.string().optional().default("none"),
   stroke: z.string().nullable().optional(),
   strokeWidth: z.number().optional().default(1),
   opacity: z.number().optional().default(1),
@@ -65,7 +64,7 @@ export const ArrowShapeFieldsSchema = ShapeBaseSchema.extend({
 
 export const ArcShapeFieldsSchema = ShapeBaseSchema.extend({
   shapeType: z.literal("arc"),
-  radius: z.number().min(1),
+  radius: z.number().describe("Arc radius in pixels, must be positive"),
   startAngle: z.number(),
   endAngle: z.number(),
   closed: z.boolean().optional().default(false),
@@ -73,14 +72,14 @@ export const ArcShapeFieldsSchema = ShapeBaseSchema.extend({
 
 export const PolygonShapeFieldsSchema = ShapeBaseSchema.extend({
   shapeType: z.literal("polygon"),
-  points: z.array(z.object({ x: z.number(), y: z.number() })).min(2),
+  points: z.array(z.object({ x: z.number(), y: z.number() })).describe("Polygon vertices, minimum 2 points"),
   closed: z.boolean().optional().default(true),
 });
 
 export const TextFieldsSchema = z.object({
-  text: z.string(),
+  text: z.string().describe("Non-empty visible text content"),
   fontFamily: z.string().optional().default("Arial"),
-  fontSize: z.number().optional().default(16),
+  fontSize: z.number().optional().default(16).describe("Font size in pixels, minimum 8"),
   fontWeight: z.string().optional().default("normal"),
   fontStyle: z.string().optional().default("normal"),
   textAlign: z.string().optional().default("left"),

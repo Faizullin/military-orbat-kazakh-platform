@@ -20,7 +20,7 @@ export const CloudinaryService: IStorageProvider = {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: folderPath,
-          resource_type: "auto",
+          resource_type: "image",
           ...(isSvg
             ? {}
             : { transformation: [{ quality: "auto", fetch_format: "auto" }] }),

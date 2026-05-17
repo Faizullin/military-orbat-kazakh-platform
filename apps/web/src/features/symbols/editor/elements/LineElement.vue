@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { CanvasObject, LineShapeFields } from "../types";
 import { useSymbolEditorStore } from "../editorStore";
+import { snapPointToGuides } from "../snapUtils";
 
 const props = defineProps<{
   element: CanvasObject;
@@ -13,7 +14,10 @@ const emit = defineEmits<{
 }>();
 
 const store = useSymbolEditorStore();
-const fields = computed(() => props.element.fields as { _type: "shape" } & LineShapeFields);
+const shapeRef = ref<any>(null);
+const fields = computed(
+  () => props.element.fields as { _type: "shape" } & LineShapeFields,
+);
 const properties = computed(() => props.element.properties);
 
 const showHandles = computed(
@@ -34,6 +38,10 @@ const lineConfig = computed(() => ({
   hitStrokeWidth: 12,
 }));
 
+defineExpose({
+  getNode: () => shapeRef.value?.getNode?.() ?? null,
+});
+
 function handleConfig(x: number, y: number) {
   return {
     x,
@@ -43,6 +51,7 @@ function handleConfig(x: number, y: number) {
     stroke: "#3b82f6",
     strokeWidth: 2,
     draggable: true,
+    name: "endpoint-handle",
   };
 }
 
@@ -64,31 +73,63 @@ function onDragEnd(e: any) {
       y2: fields.value.y2 + dy,
     },
   });
+  store.clearSnapGuides();
+}
+
+function withAngleSnap(which: 1 | 2, point: { x: number; y: number }, e: any) {
+  if (!e.evt?.shiftKey) return point;
+  const anchor =
+    which === 1
+      ? { x: fields.value.x2, y: fields.value.y2 }
+      : { x: fields.value.x1, y: fields.value.y1 };
+  const dx = point.x - anchor.x;
+  const dy = point.y - anchor.y;
+  const length = Math.hypot(dx, dy);
+  if (length < 1) return point;
+  const angle = Math.atan2(dy, dx);
+  const snappedAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+  return {
+    x: anchor.x + Math.cos(snappedAngle) * length,
+    y: anchor.y + Math.sin(snappedAngle) * length,
+  };
 }
 
 function onHandleDragMove(which: 1 | 2, e: any) {
+  e.cancelBubble = true;
+  let point = withAngleSnap(which, { x: e.target.x(), y: e.target.y() }, e);
+  if (store.snappingEnabled) {
+    const snapped = snapPointToGuides(point, store.content, props.element.id);
+    point = snapped.point;
+    store.setSnapGuides(snapped.guides);
+  }
+  e.target.position(point);
+
   const updated =
-    which === 1
-      ? { x1: e.target.x(), y1: e.target.y() }
-      : { x2: e.target.x(), y2: e.target.y() };
-  store.updateObject(props.element.id, {
-    fields: { ...fields.value, ...updated },
-  }, false);
+    which === 1 ? { x1: point.x, y1: point.y } : { x2: point.x, y2: point.y };
+  store.updateObject(
+    props.element.id,
+    {
+      fields: { ...fields.value, ...updated },
+    },
+    false,
+  );
 }
 
-function onHandleDragEnd() {
+function onHandleDragEnd(e: any) {
+  e.cancelBubble = true;
+  store.clearSnapGuides();
   store.pushCurrentToHistory();
 }
 </script>
 
 <template>
   <v-line
+    ref="shapeRef"
     :config="lineConfig"
     @click="emit('select', $event)"
     @tap="emit('select', $event)"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
-    @transformend="store.pushCurrentToHistory()"
   />
   <template v-if="showHandles">
     <v-circle
